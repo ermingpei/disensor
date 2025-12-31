@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sentinel Data Marketplace</title>
+
+    <!-- Fonts & Icons -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="dashboard.css">
+    <style>
+        /* Marketplace Specific Overrides */
+        :root {
+            --accent-color: #f59e0b;
+            /* Amber for Marketplace */
+        }
+
+        #map-container {
+            height: 500px;
+            width: 100%;
+            border-radius: 12px;
+            overflow: hidden;
+            margin: 20px 0;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            position: relative;
+            z-index: 1;
+        }
+
+        .pricing-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 40px;
+        }
+
+        .pricing-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            padding: 30px;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .pricing-card:hover {
+            transform: translateY(-5px);
+            border-color: var(--accent-color);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .pricing-card h3 {
+            font-size: 1.5rem;
+            margin-bottom: 10px;
+            color: #fff;
+        }
+
+        .price {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--accent-color);
+            margin-bottom: 20px;
+        }
+
+        .price span {
+            font-size: 1rem;
+            color: var(--text-secondary);
+            font-weight: 400;
+        }
+
+        .features {
+            list-style: none;
+            padding: 0;
+            margin: 0 0 30px 0;
+        }
+
+        .features li {
+            margin-bottom: 12px;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+        }
+
+        .features li::before {
+            content: "✓";
+            color: var(--accent-color);
+            margin-right: 10px;
+            font-weight: bold;
+        }
+
+        .btn-buy {
+            width: 100%;
+            padding: 15px;
+            background: rgba(245, 158, 11, 0.1);
+            border: 1px solid var(--accent-color);
+            color: var(--accent-color);
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-buy:hover {
+            background: var(--accent-color);
+            color: #000;
+        }
+
+        .nav-link {
+            color: var(--text-secondary);
+            text-decoration: none;
+            margin-right: 20px;
+            transition: color 0.2s;
+        }
+
+        .nav-link:hover,
+        .nav-link.active {
+            color: #fff;
+        }
+
+        /* Map Marker Pulsing Animation */
+        .pulse-icon {
+            position: relative;
+        }
+
+        .pulse-ring {
+            position: absolute;
+            width: 20px;
+            height: 10px;
+            background: rgba(16, 185, 129, 0.6);
+            border-radius: 50%;
+            bottom: 0;
+            left: 8px;
+            z-index: -1;
+            transform: translate(0, 50%);
+            animation: pulse-ring 2s infinite;
+        }
+
+        @keyframes pulse-ring {
+            0% {
+                transform: scale(0.5);
+                opacity: 0.8;
+            }
+
+            100% {
+                transform: scale(3);
+                opacity: 0;
+            }
+        }
+
+        /* Map Search Bar */
+        .map-search-control {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 10px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            display: flex;
+            gap: 8px;
+            width: 300px;
+            backdrop-filter: blur(4px);
+        }
+
+        .map-search-control input {
+            border: 1px solid #ddd;
+            background: #fff;
+            color: #333;
+            padding: 8px 12px;
+            border-radius: 6px;
+            flex-grow: 1;
+            outline: none;
+            font-family: inherit;
+        }
+
+        .map-search-control button {
+            background: var(--accent-color);
+            border: none;
+            color: #000;
+            padding: 8px 15px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .map-search-control button:hover {
+            opacity: 0.9;
+        }
+
+        /* 亮色地图模式下的覆盖层调整 */
+        .leaflet-layer,
+        .leaflet-control-zoom-in,
+        .leaflet-control-zoom-out,
+        .leaflet-control-attribution {
+            /* 移除之前的反色滤镜，还原亮色地图 */
+            filter: none !important;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="glass-bg"></div>
+    <div class="mesh-gradient"></div>
+
+    <div class="container">
+        <header>
+            <div class="logo">
+                <div class="logo-icon">S</div>
+                <span>Sentinel <span style="font-weight:300; opacity:0.7">Data Market</span></span>
+            </div>
+            <nav>
+                <a href="index.html" class="nav-link">Network Stats</a>
+                <a href="#" class="nav-link active">Marketplace</a>
+            </nav>
+            <div class="status-badge pulse">
+                <div class="status-dot"></div>
+                API ONLINE
+            </div>
+        </header>
+
+        <div class="grid-layout" style="grid-template-columns: 1fr;">
+            <!-- Map Section -->
+            <div class="card glass-panel" style="grid-column: 1 / -1;">
+                <div class="card-header">
+                    <h2>Global Data Coverage</h2>
+                    <div class="live-indicator">
+                        <span id="active-nodes-count">0</span> Active Nodes Streaming
+                    </div>
+                </div>
+                <div id="map-container"></div>
+                <div class="stats-row" style="margin-top: 20px; display: flex; gap: 30px;">
+                    <div>
+                        <div class="label">Total Data Points</div>
+                        <div class="value" id="market-total-points">Loading...</div>
+                    </div>
+                    <div>
+                        <div class="label">Avg Data Price</div>
+                        <div class="value">$0.0005 <span style="font-size:12px; color:gray">/ point</span></div>
+                    </div>
+                    <div>
+                        <div class="label">Est. Network Value</div>
+                        <div class="value" id="market-value">$0.00</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pricing Section -->
+            <div style="grid-column: 1 / -1;">
+                <h2 style="margin-top: 20px;">Data Subscription Tiers</h2>
+                <div class="pricing-grid">
+
+                    <!-- Free Tier -->
+                    <div class="pricing-card">
+                        <h3>Researcher / Student</h3>
+                        <div class="price">$0 <span>/ mo</span></div>
+                        <ul class="features">
+                            <li>24h Delayed Data</li>
+                            <li>Max 1,000 requests/day</li>
+                            <li>Standard Resolution (1km)</li>
+                            <li>Community Support</li>
+                        </ul>
+                        <button class="btn-buy">Get API Key</button>
+                    </div>
+
+                    <!-- Pro Tier -->
+                    <div class="pricing-card"
+                        style="border-color: var(--accent-color); background: rgba(245, 158, 11, 0.05);">
+                        <div
+                            style="position: absolute; top: 15px; right: -30px; background: var(--accent-color); color: #000; padding: 5px 40px; transform: rotate(45deg); font-size: 10px; font-weight: bold;">
+                            POPULAR</div>
+                        <h3>Commercial</h3>
+                        <div class="price">$99 <span>/ mo</span></div>
+                        <ul class="features">
+                            <li>Real-time Data Stream (WebSocket)</li>
+                            <li>Unlimited Requests</li>
+                            <li>High Resolution (10m)</li>
+                            <li>Historic Archive Access</li>
+                            <li>Raw Sensor Data (Pressure/Noise)</li>
+                        </ul>
+                        <button class="btn-buy" style="background: var(--accent-color); color: #000;">Subscribe
+                            Now</button>
+                    </div>
+
+                    <!-- Enterprise Tier -->
+                    <div class="pricing-card">
+                        <h3>Enterprise</h3>
+                        <div class="price">Custom</div>
+                        <ul class="features">
+                            <li>Dedicated Nodes Deployment</li>
+                            <li>Custom Sensory Filters</li>
+                            <li>SLA Guarantee</li>
+                            <li>Private Subnet</li>
+                        </ul>
+                        <button class="btn-buy">Contact Sales</button>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/h3-js@4.1.0/dist/h3-js.umd.js"></script>
+    <script src="marketplace.js"></script>
+</body>
+
+</html>
