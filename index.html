@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Qubit Rhythm - Distributed Environmental Data Network</title>
+    <meta name="description"
+        content="Real-time pressure & noise mapping from distributed sensors. Hyperlocal environmental data API for weather, urban planning, and AI.">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+        }
+
+        .hero {
+            min-height: 60vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            color: white;
+            padding: 2rem;
+        }
+
+        .hero h1 {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        .hero p {
+            font-size: 1.25rem;
+            max-width: 600px;
+            margin-bottom: 2rem;
+            opacity: 0.95;
+        }
+
+        .cta-button {
+            background: white;
+            color: #667eea;
+            padding: 1rem 2rem;
+            border-radius: 50px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 1.1rem;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            transition: transform 0.2s;
+        }
+
+        .cta-button:hover {
+            transform: translateY(-2px);
+        }
+
+        .stats {
+            background: white;
+            padding: 3rem 2rem;
+            text-align: center;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .stat-item {
+            padding: 1.5rem;
+            background: #f8f9fa;
+            border-radius: 12px;
+        }
+
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #667eea;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-label {
+            color: #666;
+            font-size: 0.95rem;
+        }
+
+        .demo-section {
+            background: #f8f9fa;
+            padding: 4rem 2rem;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        h2 {
+            text-align: center;
+            font-size: 2.5rem;
+            margin-bottom: 3rem;
+            color: #333;
+        }
+
+        #map {
+            height: 500px;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+            margin-bottom: 2rem;
+        }
+
+        .waitlist {
+            background: white;
+            padding: 4rem 2rem;
+            text-align: center;
+        }
+
+        .waitlist-form {
+            max-width: 500px;
+            margin: 2rem auto;
+            background: #f8f9fa;
+            padding: 2rem;
+            border-radius: 12px;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+            text-align: left;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 0.75rem;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 1rem;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .submit-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 1rem 2rem;
+            border: none;
+            border-radius: 50px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            transition: transform 0.2s;
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .use-cases {
+            background: #667eea;
+            color: white;
+            padding: 4rem 2rem;
+        }
+
+        .use-cases h2 {
+            color: white;
+        }
+
+        .use-case-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .use-case-card {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 2rem;
+            border-radius: 12px;
+            backdrop-filter: blur(10px);
+        }
+
+        .use-case-card h3 {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .footer {
+            background: #2d3748;
+            color: white;
+            text-align: center;
+            padding: 2rem;
+        }
+
+        .success-message {
+            display: none;
+            background: #10b981;
+            color: white;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-top: 1rem;
+        }
+    </style>
+</head>
+
+<body>
+    <section class="hero">
+        <h1>⚛️ Qubit Rhythm</h1>
+        <p>Measuring the World's Pulse<br>
+            <small style="opacity: 0.8; font-size: 0.9rem;">Powered by DiSensor Network</small><br><br>
+            Real-time Pressure & Noise Mapping from Distributed Mobile Sensors
+        </p>
+        <a href="#waitlist" class="cta-button">Join API Waitlist</a>
+    </section>
+
+    <section class="stats">
+        <div class="stats-grid">
+            <div class="stat-item">
+                <div class="stat-number" id="active-sensors">--</div>
+                <div class="stat-label">Active Sensors</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number" id="data-points">--</div>
+                <div class="stat-label">Data Points Collected</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number" id="coverage">--</div>
+                <div class="stat-label">Coverage Area (km²)</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number">30s</div>
+                <div class="stat-label">Update Frequency</div>
+            </div>
+        </div>
+    </section>
+
+    <section class="demo-section">
+        <div class="container">
+            <h2>📍 Live Coverage Map</h2>
+            <div id="map"></div>
+            <p style="text-align: center; color: #666; margin-top: 1rem;">
+                Real-time data from our growing sensor network. Data updated every 30 seconds.
+            </p>
+        </div>
+    </section>
+
+    <section class="use-cases">
+        <h2>🎯 Who Needs This Data?</h2>
+        <div class="use-case-grid">
+            <div class="use-case-card">
+                <h3>🌤️ Weather Services</h3>
+                <p>Hyperlocal barometric pressure for improved forecast accuracy. 100x denser than traditional weather
+                    stations.</p>
+            </div>
+            <div class="use-case-card">
+                <h3>🏙️ Urban Planning</h3>
+                <p>Noise pollution mapping for smarter city development and building regulations.</p>
+            </div>
+            <div class="use-case-card">
+                <h3>🏠 Real Estate</h3>
+                <p>Quiet neighborhood index for property valuation and buyer recommendations.</p>
+            </div>
+            <div class="use-case-card">
+                <h3>🤖 AI Training</h3>
+                <p>Real-world sensor datasets for physical AI models and digital twins.</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="waitlist" id="waitlist">
+        <h2>Join the Network</h2>
+        <p style="max-width: 600px; margin: 0 auto 2rem; color: #666;">
+            Get early access to our API, or join as a data contributor and earn rewards.
+        </p>
+        <div class="waitlist-form">
+            <form id="signup-form">
+                <div class="form-group">
+                    <label>I'm interested in:</label>
+                    <select name="interest" required>
+                        <option value="">Select...</option>
+                        <option value="data-api">Data API (Buyer)</option>
+                        <option value="contributor">Contributing Data (Earn Tokens)</option>
+                        <option value="both">Both</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Email:</label>
+                    <input type="email" name="email" required placeholder="you@company.com">
+                </div>
+                <div class="form-group">
+                    <label>Organization (optional):</label>
+                    <input type="text" name="organization" placeholder="Your Company">
+                </div>
+                <div class="form-group">
+                    <label>Use Case (optional):</label>
+                    <input type="text" name="usecase" placeholder="e.g., Weather forecasting, Urban noise analysis">
+                </div>
+                <button type="submit" class="submit-btn">Join Waitlist</button>
+                <div class="success-message" id="success-msg">
+                    ✅ Thank you! We'll contact you soon with early access details.
+                </div>
+            </form>
+        </div>
+    </section>
+
+    <footer class="footer">
+        <p>&copy; 2025 Qubit Rhythm. Building the world's first distributed environmental sensing layer.</p>
+        <p style="margin-top: 0.5rem; opacity: 0.7;">Contact: hello@qubitrhythm.com</p>
+    </footer>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        // Initialize map
+        const map = L.map('map').setView([37.7749, -122.4194], 12);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(map);
+
+        // Supabase connection
+        const SUPABASE_URL = 'YOUR_SUPABASE_URL'; // You'll need to replace this
+        const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY';
+
+        let supabase;
+        if (SUPABASE_URL !== 'YOUR_SUPABASE_URL') {
+            supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        }
+
+        // Load statistics
+        async function loadStats() {
+            if (!supabase) {
+                // Mock data for demo
+                document.getElementById('active-sensors').textContent = '12';
+                document.getElementById('data-points').textContent = '142K';
+                document.getElementById('coverage').textContent = '50';
+                return;
+            }
+
+            try {
+                // Get unique devices (last 24 hours)
+                const { data: devices } = await supabase
+                    .from('sensor_readings')
+                    .select('device_id')
+                    .gte('created_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString());
+
+                const uniqueDevices = new Set(devices?.map(d => d.device_id) || []);
+                document.getElementById('active-sensors').textContent = uniqueDevices.size;
+
+                // Get total data points
+                const { count } = await supabase
+                    .from('sensor_readings')
+                    .select('*', { count: 'exact', head: true });
+
+                document.getElementById('data-points').textContent =
+                    count > 1000 ? `${Math.floor(count / 1000)}K` : count;
+
+            } catch (error) {
+                console.error('Error loading stats:', error);
+            }
+        }
+
+        // Load map markers
+        async function loadMapData() {
+            if (!supabase) {
+                // Add demo markers
+                const demoPoints = [
+                    [37.7749, -122.4194],
+                    [37.7849, -122.4094],
+                    [37.7649, -122.4294]
+                ];
+                demoPoints.forEach(([lat, lng]) => {
+                    L.circleMarker([lat, lng], {
+                        radius: 8,
+                        fillColor: '#667eea',
+                        color: 'white',
+                        weight: 2,
+                        fillOpacity: 0.8
+                    }).addTo(map).bindPopup('Sensor Active');
+                });
+                return;
+            }
+
+            try {
+                // Get recent sensor locations
+                const { data } = await supabase
+                    .from('sensor_readings')
+                    .select('lat, lng, pressure, decibel, created_at')
+                    .gte('created_at', new Date(Date.now() - 60 * 60 * 1000).toISOString())
+                    .limit(100);
+
+                data?.forEach(point => {
+                    L.circleMarker([point.lat, point.lng], {
+                        radius: 6,
+                        fillColor: '#667eea',
+                        color: 'white',
+                        weight: 2,
+                        fillOpacity: 0.7
+                    }).addTo(map).bindPopup(`
+                        <b>Sensor Data</b><br>
+                        Pressure: ${point.pressure.toFixed(2)} hPa<br>
+                        Noise: ${point.decibel.toFixed(1)} dB
+                    `);
+                });
+            } catch (error) {
+                console.error('Error loading map data:', error);
+            }
+        }
+
+        // Handle form submission
+        document.getElementById('signup-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const data = Object.fromEntries(formData);
+
+            if (!supabase) {
+                // For now, just show success (you'd need to set up a form service)
+                console.log('Waitlist signup:', data);
+                document.getElementById('success-msg').style.display = 'block';
+                e.target.reset();
+                return;
+            }
+
+            try {
+                await supabase.from('waitlist').insert([{
+                    email: data.email,
+                    interest: data.interest,
+                    organization: data.organization,
+                    use_case: data.usecase,
+                    created_at: new Date().toISOString()
+                }]);
+
+                document.getElementById('success-msg').style.display = 'block';
+                e.target.reset();
+            } catch (error) {
+                console.error('Signup error:', error);
+                alert('Error signing up. Please try again or email us directly.');
+            }
+        });
+
+        // Initialize
+        loadStats();
+        loadMapData();
+    </script>
+</body>
+
+</html>
