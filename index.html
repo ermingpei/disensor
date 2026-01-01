@@ -271,14 +271,23 @@
             const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFsY3p5ZnRsaGNkc2lmam50Y2JoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY5NzE1MTAsImV4cCI6MjA4MjU0NzUxMH0.839c_boZy57LB-gBXuJjevubC2VVYmvNkQdTg1uB-y0';
             const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-            const res = 8; // H3 格子分辨率
-            const hexLayers = {}; // 存储所有格子的 L.Polygon
+            const res = 8;
+            const hexLayers = {};
+            const pointLayer = L.layerGroup().addTo(map); // 用于存放具体的设备采集点
+
+            // 处理地图缩放，联动显示点位
+            map.on('zoomend', function () {
+                const currentZoom = map.getZoom();
+                if (currentZoom >= 14) {
+                    if (!map.hasLayer(pointLayer)) map.addLayer(pointLayer);
+                } else {
+                    if (map.hasLayer(pointLayer)) map.removeLayer(pointLayer);
+                }
+            });
 
             // 1. 生成埃德蒙顿背景网格 (Empty Hexagons)
             function generateGrid() {
                 try {
-                    console.log('🏗️ Generating base grid...');
-                    // 兼容不同版本的 h3-js
                     const getH3Index = (lat, lng, r) => {
                         if (typeof h3.latLngToCell === 'function') return h3.latLngToCell(lat, lng, r);
                         return h3.geoToH3(lat, lng, r);
@@ -293,25 +302,24 @@
                     };
 
                     const edmontonInner = getH3Index(53.5461, -113.4938, res);
-                    const neighbors = getDisk(edmontonInner, 25); // 扩大到25圈以覆盖郊区
+                    const neighbors = getDisk(edmontonInner, 25);
 
                     neighbors.forEach(h3Index => {
                         const boundary = getBoundary(h3Index);
                         const polygon = L.polygon(boundary, {
-                            color: '#999',
-                            weight: 0.8,
-                            dashArray: '5, 8', // 虚线效果
+                            color: '#bbb',
+                            weight: 0.5,
+                            dashArray: '3, 6',
                             fillColor: 'transparent',
                             fillOpacity: 0,
                             interactive: true
                         }).addTo(map);
 
-                        polygon.bindPopup(`Zone ID: ${h3Index}<br>Status: Available for Deployment`);
+                        polygon.bindPopup(`Zone ID: ${h3Index}`);
                         hexLayers[h3Index] = polygon;
                     });
-                    console.log(`✅ Professional Grid generated: ${neighbors.length} cells`);
                 } catch (e) {
-                    console.error('Grid generation failed:', e);
+                    console.error('Grid failed:', e);
                 }
             }
             generateGrid();
@@ -325,13 +333,13 @@
                 document.getElementById('active-sensors').textContent = '6';
             } catch (e) { }
 
-            // 3. 加载真实数据并点亮格子
+            // 3. 加载真实数据并点亮格子 + 添加详细点位
             try {
                 const { data: readings } = await supabase
                     .from('readings')
                     .select('location, pressure_hpa, decibel_db, timestamp, node_id')
                     .order('timestamp', { ascending: false })
-                    .limit(300);
+                    .limit(500);
 
                 if (readings) {
                     readings.forEach(r => {
@@ -340,30 +348,35 @@
                             const h3Index = h3.latLngToCell(pos.lat, pos.lng, res);
                             const layer = hexLayers[h3Index];
 
+                            // A. 为每个读数添加一个微小的散布点（仅在放大后显示）
+                            L.circleMarker([pos.lat, pos.lng], {
+                                radius: 4,
+                                fillColor: '#10b981',
+                                color: '#fff',
+                                weight: 1,
+                                fillOpacity: 0.8
+                            }).addTo(pointLayer).bindPopup(`
+                                <b>Node Capture</b><br>
+                                Pressure: ${r.pressure_hpa.toFixed(2)}<br>
+                                Noise: ${r.decibel_db.toFixed(1)} dB
+                            `);
+
                             if (layer) {
-                                // 点亮这个格子 - 半透明高级质感
+                                // B. 点亮对应的六边形格子 - 使用绿色表示环境健康
                                 layer.setStyle({
-                                    color: '#667eea',
-                                    weight: 2,
-                                    dashArray: null, // 实线表示激活
-                                    fillColor: '#667eea',
-                                    fillOpacity: 0.35 // 保持通透感
+                                    color: '#059669',
+                                    weight: 1.5,
+                                    dashArray: null,
+                                    fillColor: '#10b981',
+                                    fillOpacity: 0.3
                                 });
-                                layer.bindPopup(`
-                                    <div style="font-family: sans-serif;">
-                                        <h4 style="margin:0; color:#667eea;">Sentinel Coverage</h4>
-                                        <hr style="border:0; border-top:1px solid #eee; margin:5px 0;">
-                                        <div><b>Pressure:</b> ${r.pressure_hpa.toFixed(1)} hPa</div>
-                                        <div><b>Noise:</b> ${r.decibel_db.toFixed(1)} dB</div>
-                                        <div style="font-size:10px; color:#aaa; margin-top:5px;">Last Data: ${new Date(r.timestamp).toLocaleString()}</div>
-                                    </div>
-                                `);
+                                layer.bindPopup(`<b>Sentinel Group</b><br>${r.node_id.slice(0, 8)}...`);
                             }
                         }
                     });
                 }
             } catch (e) {
-                console.error('Data load failed', e);
+                console.error('Points load failed', e);
             }
 
             console.log('🎉 H3 Grid Strategy Ready!');
