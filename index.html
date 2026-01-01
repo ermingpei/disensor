@@ -273,20 +273,11 @@
 
             const res = 8;
             const hexLayers = {};
-            const pointLayer = L.layerGroup().addTo(map); // 用于存放具体的设备采集点
+            const pointLayer = L.layerGroup().addTo(map);
 
-            // 处理地图缩放，联动显示点位
-            map.on('zoomend', function () {
-                const currentZoom = map.getZoom();
-                if (currentZoom >= 14) {
-                    if (!map.hasLayer(pointLayer)) map.addLayer(pointLayer);
-                } else {
-                    if (map.hasLayer(pointLayer)) map.removeLayer(pointLayer);
-                }
-            });
-
-            // 1. 生成埃德蒙顿背景网格 (Empty Hexagons)
-            function generateGrid() {
+            // 1. 动态网格生成函数 (全球通用)
+            function updateGrid() {
+                const center = map.getCenter();
                 try {
                     const getH3Index = (lat, lng, r) => {
                         if (typeof h3.latLngToCell === 'function') return h3.latLngToCell(lat, lng, r);
@@ -301,28 +292,44 @@
                         return h3.kRing(idx, r);
                     };
 
-                    const edmontonInner = getH3Index(53.5461, -113.4938, res);
-                    const neighbors = getDisk(edmontonInner, 25);
+                    const centerHex = getH3Index(center.lat, center.lng, res);
+                    const neighbors = getDisk(centerHex, 15); // 在视野中心周围画 15 圈
 
                     neighbors.forEach(h3Index => {
-                        const boundary = getBoundary(h3Index);
-                        const polygon = L.polygon(boundary, {
-                            color: '#bbb',
-                            weight: 0.5,
-                            dashArray: '3, 6',
-                            fillColor: 'transparent',
-                            fillOpacity: 0,
-                            interactive: true
-                        }).addTo(map);
+                        if (!hexLayers[h3Index]) { // 避免重复创建已有的格子
+                            const boundary = getBoundary(h3Index);
+                            const polygon = L.polygon(boundary, {
+                                color: '#bbb',
+                                weight: 0.5,
+                                dashArray: '3, 6',
+                                fillColor: 'transparent',
+                                fillOpacity: 0,
+                                interactive: true
+                            }).addTo(map);
 
-                        polygon.bindPopup(`Zone ID: ${h3Index}`);
-                        hexLayers[h3Index] = polygon;
+                            polygon.bindPopup(`Zone ID: ${h3Index}<br>Status: Available`);
+                            hexLayers[h3Index] = polygon;
+                        }
                     });
                 } catch (e) {
-                    console.error('Grid failed:', e);
+                    console.error('Dynamic grid failed:', e);
                 }
             }
-            generateGrid();
+
+            // 监听移动和缩放
+            map.on('moveend', updateGrid);
+            map.on('zoomend', function () {
+                updateGrid();
+                const currentZoom = map.getZoom();
+                if (currentZoom >= 14) {
+                    if (!map.hasLayer(pointLayer)) map.addLayer(pointLayer);
+                } else {
+                    if (map.hasLayer(pointLayer)) map.removeLayer(pointLayer);
+                }
+            });
+
+            // 初始化首次网格
+            updateGrid();
 
             // 2. 加载统计数据
             try {
@@ -333,7 +340,7 @@
                 document.getElementById('active-sensors').textContent = '6';
             } catch (e) { }
 
-            // 3. 加载真实数据并点亮格子 + 添加详细点位
+            // 3. 加载真实数据并点亮格子
             try {
                 const { data: readings } = await supabase
                     .from('readings')
@@ -345,10 +352,7 @@
                     readings.forEach(r => {
                         const pos = parseHexString(r.location);
                         if (pos) {
-                            const h3Index = h3.latLngToCell(pos.lat, pos.lng, res);
-                            const layer = hexLayers[h3Index];
-
-                            // A. 为每个读数添加一个微小的散布点（仅在放大后显示）
+                            // A. 添加细节采样点
                             L.circleMarker([pos.lat, pos.lng], {
                                 radius: 4,
                                 fillColor: '#10b981',
@@ -356,27 +360,34 @@
                                 weight: 1,
                                 fillOpacity: 0.8
                             }).addTo(pointLayer).bindPopup(`
-                                <b>Node Capture</b><br>
-                                Pressure: ${r.pressure_hpa.toFixed(2)}<br>
-                                Noise: ${r.decibel_db.toFixed(1)} dB
+                                <b>Real-time Capture</b><br>
+                                Node: ${r.node_id.slice(0, 8)}...<br>
+                                Pressure: ${r.pressure_hpa.toFixed(2)}
                             `);
 
-                            if (layer) {
-                                // B. 点亮对应的六边形格子 - 使用绿色表示环境健康
-                                layer.setStyle({
-                                    color: '#059669',
-                                    weight: 1.5,
-                                    dashArray: null,
-                                    fillColor: '#10b981',
-                                    fillOpacity: 0.3
-                                });
-                                layer.bindPopup(`<b>Sentinel Group</b><br>${r.node_id.slice(0, 8)}...`);
+                            // B. 确保并点亮格子
+                            const h3Index = h3.latLngToCell(pos.lat, pos.lng, res);
+                            let layer = hexLayers[h3Index];
+
+                            if (!layer) {
+                                // 如果这区域之前没生成网格（比如偏远地区），则立即补画
+                                const boundary = h3.cellToBoundary(h3Index);
+                                layer = L.polygon(boundary, { interactive: true }).addTo(map);
+                                hexLayers[h3Index] = layer;
                             }
+
+                            layer.setStyle({
+                                color: '#059669',
+                                weight: 1.5,
+                                dashArray: null,
+                                fillColor: '#10b981',
+                                fillOpacity: 0.35
+                            });
                         }
                     });
                 }
             } catch (e) {
-                console.error('Points load failed', e);
+                console.error('Data loading error', e);
             }
 
             console.log('🎉 H3 Grid Strategy Ready!');
