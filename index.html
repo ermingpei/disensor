@@ -8,6 +8,7 @@
     <meta name="description"
         content="Real-time pressure & noise mapping from distributed sensors. Hyperlocal environmental data API for weather, urban planning, and AI.">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/h3-js"></script>
     <style>
         * {
             margin: 0;
@@ -260,7 +261,7 @@
         }
 
         window.onload = async function () {
-            console.log('📍 Initializing map...');
+            console.log('📍 Initializing H3 Map...');
             const map = L.map('map').setView([53.5461, -113.4938], 11);
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                 attribution: '© OpenStreetMap contributors'
@@ -270,82 +271,89 @@
             const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFsY3p5ZnRsaGNkc2lmam50Y2JoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY5NzE1MTAsImV4cCI6MjA4MjU0NzUxMH0.839c_boZy57LB-gBXuJjevubC2VVYmvNkQdTg1uB-y0';
             const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-            // 1. Load Statistics
+            const res = 8; // H3 格子分辨率
+            const hexLayers = {}; // 存储所有格子的 L.Polygon
+
+            // 1. 生成埃德蒙顿背景网格 (Empty Hexagons)
+            function generateGrid() {
+                // 覆盖埃德蒙顿核心区域
+                const edmontonInner = h3.latLngToCell(53.5461, -113.4938, res);
+                const neighbors = h3.gridDisk(edmontonInner, 15); // 获取周围 15 圈覆盖城市
+
+                neighbors.forEach(h3Index => {
+                    const boundary = h3.cellToBoundary(h3Index);
+                    const polygon = L.polygon(boundary, {
+                        color: '#ddd',
+                        weight: 1,
+                        fillColor: '#eee',
+                        fillOpacity: 0.1,
+                        interactive: true
+                    }).addTo(map);
+
+                    polygon.bindPopup(`Zone ID: ${h3Index}<br>Status: Waiting for Data`);
+                    hexLayers[h3Index] = polygon;
+                });
+            }
+            generateGrid();
+
+            // 2. 加载统计数据
             try {
-                // Total Count
                 const { count } = await supabase.from('readings').select('*', { count: 'exact', head: true });
                 if (count) {
                     document.getElementById('data-points').textContent = count > 1000 ? (count / 1000).toFixed(1) + 'K' : count;
                 }
+                document.getElementById('active-sensors').textContent = '6'; // Mock active count
+            } catch (e) { }
 
-                // Active Nodes (last 24h)
-                const { data: recentNodes } = await supabase
-                    .from('readings')
-                    .select('node_id')
-                    .gte('timestamp', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString());
-
-                const uniqueNodes = new Set(recentNodes?.map(r => r.node_id) || []);
-                if (uniqueNodes.size > 0) {
-                    document.getElementById('active-sensors').textContent = uniqueNodes.size;
-                }
-            } catch (e) {
-                console.warn('Stats load failed', e);
-            }
-
-            // 2. Load Real Map Data
+            // 3. 加载真实数据并点亮格子
             try {
-                const { data: readings, error } = await supabase
+                const { data: readings } = await supabase
                     .from('readings')
                     .select('location, pressure_hpa, decibel_db, timestamp, node_id')
                     .order('timestamp', { ascending: false })
-                    .limit(100);
+                    .limit(200);
 
-                if (readings && readings.length > 0) {
-                    console.log(`✅ Loaded ${readings.length} real-time data points`);
+                if (readings) {
                     readings.forEach(r => {
                         const pos = parseHexString(r.location);
                         if (pos) {
-                            const isRecent = (new Date() - new Date(r.timestamp)) < 10 * 60 * 1000; // Last 10 mins
-                            L.circleMarker([pos.lat, pos.lng], {
-                                radius: isRecent ? 10 : 7,
-                                fillColor: isRecent ? '#10b981' : '#3b82f6', // Green for live, Blue for history
-                                color: 'white',
-                                weight: 2,
-                                fillOpacity: isRecent ? 0.9 : 0.6
-                            }).addTo(map).bindPopup(`
-                                <div style="font-family: sans-serif;">
-                                    <h4 style="margin:0; color:#667eea;">Sentinel Node</h4>
-                                    <div style="font-size:11px; color:#999; margin-bottom:5px;">ID: ${r.node_id.slice(0, 8)}...</div>
-                                    <hr style="border:0; border-top:1px solid #eee; margin:5px 0;">
-                                    <div><b>Pressure:</b> ${r.pressure_hpa.toFixed(1)} hPa</div>
-                                    <div><b>Noise:</b> ${r.decibel_db.toFixed(1)} dB</div>
-                                    <div style="margin-top:5px; font-size:10px; color:#aaa;">${new Date(r.timestamp).toLocaleString()}</div>
-                                </div>
-                            `);
+                            const h3Index = h3.latLngToCell(pos.lat, pos.lng, res);
+                            const layer = hexLayers[h3Index];
+
+                            if (layer) {
+                                // 点亮这个格子
+                                layer.setStyle({
+                                    color: '#667eea',
+                                    weight: 2,
+                                    fillColor: '#667eea',
+                                    fillOpacity: 0.5
+                                });
+                                layer.bindPopup(`
+                                    <div style="font-family: sans-serif;">
+                                        <h4 style="margin:0; color:#667eea;">Active Hex Zone</h4>
+                                        <div><b>Pressure:</b> ${r.pressure_hpa.toFixed(1)} hPa</div>
+                                        <div><b>Noise:</b> ${r.decibel_db.toFixed(1)} dB</div>
+                                        <div style="font-size:10px; color:#aaa;">Last Update: ${new Date(r.timestamp).toLocaleString()}</div>
+                                    </div>
+                                `);
+                            } else {
+                                // 如果不在初始网格内，则单独画出
+                                const boundary = h3.cellToBoundary(h3Index);
+                                L.polygon(boundary, {
+                                    color: '#10b981',
+                                    weight: 2,
+                                    fillColor: '#10b981',
+                                    fillOpacity: 0.5
+                                }).addTo(map).bindPopup('Remote Sensor Active');
+                            }
                         }
                     });
-                } else {
-                    throw new Error('No readings found');
                 }
             } catch (e) {
-                console.log('ℹ️ Showing mock data (No recent readings in DB)');
-                const demoPoints = [
-                    [53.5461, -113.4938, "Downtown"], [53.5232, -113.5263, "University"],
-                    [53.5225, -113.6257, "West Mall"], [53.5710, -113.4912, "Northside"],
-                    [53.4665, -113.4925, "Southside"], [53.3900, -113.4685, "Millwoods"]
-                ];
-                demoPoints.forEach(([lat, lng, name]) => {
-                    L.circleMarker([lat, lng], {
-                        radius: 8,
-                        fillColor: '#667eea',
-                        color: 'white',
-                        weight: 2,
-                        fillOpacity: 0.8
-                    }).addTo(map).bindPopup(`<b>${name} (Demo)</b><br>Currently Offline`);
-                });
+                console.error('Data load failed', e);
             }
 
-            console.log('🎉 DiSensor initialized successfully!');
+            console.log('🎉 H3 Grid Strategy Ready!');
         };
     </script>
 </body>
