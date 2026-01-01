@@ -276,23 +276,42 @@
 
             // 1. 生成埃德蒙顿背景网格 (Empty Hexagons)
             function generateGrid() {
-                // 覆盖埃德蒙顿核心区域
-                const edmontonInner = h3.latLngToCell(53.5461, -113.4938, res);
-                const neighbors = h3.gridDisk(edmontonInner, 15); // 获取周围 15 圈覆盖城市
+                try {
+                    console.log('🏗️ Generating base grid...');
+                    // 兼容不同版本的 h3-js
+                    const getH3Index = (lat, lng, r) => {
+                        if (typeof h3.latLngToCell === 'function') return h3.latLngToCell(lat, lng, r);
+                        return h3.geoToH3(lat, lng, r);
+                    };
+                    const getBoundary = (idx) => {
+                        if (typeof h3.cellToBoundary === 'function') return h3.cellToBoundary(idx);
+                        return h3.h3ToGeoBoundary(idx);
+                    };
+                    const getDisk = (idx, r) => {
+                        if (typeof h3.gridDisk === 'function') return h3.gridDisk(idx, r);
+                        return h3.kRing(idx, r);
+                    };
 
-                neighbors.forEach(h3Index => {
-                    const boundary = h3.cellToBoundary(h3Index);
-                    const polygon = L.polygon(boundary, {
-                        color: '#ddd',
-                        weight: 1,
-                        fillColor: '#eee',
-                        fillOpacity: 0.1,
-                        interactive: true
-                    }).addTo(map);
+                    const edmontonInner = getH3Index(53.5461, -113.4938, res);
+                    const neighbors = getDisk(edmontonInner, 12);
 
-                    polygon.bindPopup(`Zone ID: ${h3Index}<br>Status: Waiting for Data`);
-                    hexLayers[h3Index] = polygon;
-                });
+                    neighbors.forEach(h3Index => {
+                        const boundary = getBoundary(h3Index);
+                        const polygon = L.polygon(boundary, {
+                            color: '#000',
+                            weight: 0.5,
+                            fillColor: '#666',
+                            fillOpacity: 0.05, // 淡淡的灰色网格
+                            interactive: true
+                        }).addTo(map);
+
+                        polygon.bindPopup(`Zone ID: ${h3Index}<br>Status: Available`);
+                        hexLayers[h3Index] = polygon;
+                    });
+                    console.log(`✅ Grid generated: ${neighbors.length} cells`);
+                } catch (e) {
+                    console.error('Grid generation failed:', e);
+                }
             }
             generateGrid();
 
