@@ -190,10 +190,10 @@
 
     <section class="demo-section">
         <div class="container">
-            <h2>📍 Live Coverage Map - Edmonton, Canada</h2>
+            <h2>📍 Live Coverage Map</h2>
             <div id="map"></div>
             <p style="text-align: center; color: #666; margin-top: 1rem;">
-                Real-time data from our growing sensor network in Edmonton. Data updated every 30 seconds.
+                Real-time data from our growing sensor network. Move the map to explore different areas.
             </p>
         </div>
     </section>
@@ -231,38 +231,23 @@
     <script>
         console.log('🚀 Qubit Rhythm - DiSensor Loading...');
 
-        // Helper function: Parse IEEE 754 Double (Little Endian) from WKB hex
         function parseHexString(hex) {
             if (!hex || hex.length < 50) return null;
             try {
-                // WKB offset for Point (typical PostGIS format)
                 const hexLng = hex.substring(18, 34);
                 const hexLat = hex.substring(34, 50);
-
                 const buffer = new ArrayBuffer(8);
                 const view = new DataView(buffer);
-
-                // Parse Lng
-                for (let i = 0; i < 16; i += 2) {
-                    view.setUint8(i / 2, parseInt(hexLng.substr(i, 2), 16));
-                }
+                for (let i = 0; i < 16; i += 2) view.setUint8(i / 2, parseInt(hexLng.substr(i, 2), 16));
                 const lng = view.getFloat64(0, true);
-
-                // Parse Lat
-                for (let i = 0; i < 16; i += 2) {
-                    view.setUint8(i / 2, parseInt(hexLat.substr(i, 2), 16));
-                }
+                for (let i = 0; i < 16; i += 2) view.setUint8(i / 2, parseInt(hexLat.substr(i, 2), 16));
                 const lat = view.getFloat64(0, true);
-
                 return { lat, lng };
-            } catch (e) {
-                return null;
-            }
+            } catch (e) { return null; }
         }
 
         window.onload = async function () {
-            console.log('📍 Initializing H3 Map...');
-            const map = L.map('map').setView([53.5461, -113.4938], 11);
+            const map = L.map('map').setView([53.5461, -113.4938], 12);
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                 attribution: '© OpenStreetMap contributors'
             }).addTo(map);
@@ -271,126 +256,88 @@
             const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFsY3p5ZnRsaGNkc2lmam50Y2JoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY5NzE1MTAsImV4cCI6MjA4MjU0NzUxMH0.839c_boZy57LB-gBXuJjevubC2VVYmvNkQdTg1uB-y0';
             const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-            const res = 8;
+            const res = 7; // Resolution 7 is better for city-wide visibility
             const hexLayers = {};
             const pointLayer = L.layerGroup().addTo(map);
 
-            // 1. 动态网格生成函数 (全球通用)
             function updateGrid() {
+                if (typeof h3 === 'undefined') return;
                 const center = map.getCenter();
                 try {
-                    const getH3Index = (lat, lng, r) => {
-                        if (typeof h3.latLngToCell === 'function') return h3.latLngToCell(lat, lng, r);
-                        return h3.geoToH3(lat, lng, r);
-                    };
-                    const getBoundary = (idx) => {
-                        if (typeof h3.cellToBoundary === 'function') return h3.cellToBoundary(idx);
-                        return h3.h3ToGeoBoundary(idx);
-                    };
-                    const getDisk = (idx, r) => {
-                        if (typeof h3.gridDisk === 'function') return h3.gridDisk(idx, r);
-                        return h3.kRing(idx, r);
-                    };
+                    const getH3Index = (lat, lng, r) => typeof h3.latLngToCell === 'function' ? h3.latLngToCell(lat, lng, r) : h3.geoToH3(lat, lng, r);
+                    const getBoundary = (idx) => typeof h3.cellToBoundary === 'function' ? h3.cellToBoundary(idx) : h3.h3ToGeoBoundary(idx);
+                    const getDisk = (idx, r) => typeof h3.gridDisk === 'function' ? h3.gridDisk(idx, r) : h3.kRing(idx, r);
 
-                    const centerHex = getH3Index(center.lat, center.lng, res);
-                    const neighbors = getDisk(centerHex, 15); // 在视野中心周围画 15 圈
+                    const centerCell = getH3Index(center.lat, center.lng, res);
+                    const cells = getDisk(centerCell, 12);
 
-                    neighbors.forEach(h3Index => {
-                        if (!hexLayers[h3Index]) { // 避免重复创建已有的格子
-                            const boundary = getBoundary(h3Index);
-                            const polygon = L.polygon(boundary, {
-                                color: '#bbb',
-                                weight: 0.5,
-                                dashArray: '3, 6',
+                    cells.forEach(idx => {
+                        if (!hexLayers[idx]) {
+                            const boundary = getBoundary(idx);
+                            const poly = L.polygon(boundary, {
+                                color: '#999',
+                                weight: 1,
+                                dashArray: '5, 8',
                                 fillColor: 'transparent',
                                 fillOpacity: 0,
                                 interactive: true
                             }).addTo(map);
-
-                            polygon.bindPopup(`Zone ID: ${h3Index}<br>Status: Available`);
-                            hexLayers[h3Index] = polygon;
+                            poly.bindPopup(`Zone: ${idx}`);
+                            hexLayers[idx] = poly;
                         }
                     });
-                } catch (e) {
-                    console.error('Dynamic grid failed:', e);
-                }
+                } catch (err) { console.error(err); }
             }
 
-            // 监听移动和缩放
             map.on('moveend', updateGrid);
             map.on('zoomend', function () {
                 updateGrid();
-                const currentZoom = map.getZoom();
-                if (currentZoom >= 14) {
-                    if (!map.hasLayer(pointLayer)) map.addLayer(pointLayer);
-                } else {
-                    if (map.hasLayer(pointLayer)) map.removeLayer(pointLayer);
-                }
+                if (map.getZoom() >= 13) { if (!map.hasLayer(pointLayer)) map.addLayer(pointLayer); }
+                else { if (map.hasLayer(pointLayer)) map.removeLayer(pointLayer); }
             });
 
-            // 初始化首次网格
-            updateGrid();
+            setTimeout(updateGrid, 1000);
 
-            // 2. 加载统计数据
             try {
                 const { count } = await supabase.from('readings').select('*', { count: 'exact', head: true });
-                if (count) {
-                    document.getElementById('data-points').textContent = count > 1000 ? (count / 1000).toFixed(1) + 'K' : count;
-                }
-                document.getElementById('active-sensors').textContent = '6';
+                if (count) document.getElementById('data-points').textContent = count > 1000 ? (count / 1000).toFixed(1) + 'K' : count;
             } catch (e) { }
 
-            // 3. 加载真实数据并点亮格子
             try {
-                const { data: readings } = await supabase
-                    .from('readings')
-                    .select('location, pressure_hpa, decibel_db, timestamp, node_id')
-                    .order('timestamp', { ascending: false })
-                    .limit(500);
-
+                const { data: readings } = await supabase.from('readings').select('location, pressure_hpa, decibel_db, timestamp, node_id').order('timestamp', { ascending: false }).limit(500);
                 if (readings) {
                     readings.forEach(r => {
                         const pos = parseHexString(r.location);
                         if (pos) {
-                            // A. 添加细节采样点
                             L.circleMarker([pos.lat, pos.lng], {
-                                radius: 4,
-                                fillColor: '#10b981',
+                                radius: 5,
+                                fillColor: '#2ecc71',
                                 color: '#fff',
                                 weight: 1,
-                                fillOpacity: 0.8
-                            }).addTo(pointLayer).bindPopup(`
-                                <b>Real-time Capture</b><br>
-                                Node: ${r.node_id.slice(0, 8)}...<br>
-                                Pressure: ${r.pressure_hpa.toFixed(2)}
-                            `);
+                                fillOpacity: 0.9
+                            }).addTo(pointLayer).bindPopup(`<b>Sensor</b><br>${r.pressure_hpa.toFixed(1)} hPa`);
 
-                            // B. 确保并点亮格子
-                            const h3Index = h3.latLngToCell(pos.lat, pos.lng, res);
-                            let layer = hexLayers[h3Index];
-
-                            if (!layer) {
-                                // 如果这区域之前没生成网格（比如偏远地区），则立即补画
-                                const boundary = h3.cellToBoundary(h3Index);
-                                layer = L.polygon(boundary, { interactive: true }).addTo(map);
-                                hexLayers[h3Index] = layer;
+                            if (typeof h3 !== 'undefined') {
+                                const getH3Index = (lat, lng, r) => typeof h3.latLngToCell === 'function' ? h3.latLngToCell(lat, lng, r) : h3.geoToH3(lat, lng, r);
+                                const idx = getH3Index(pos.lat, pos.lng, res);
+                                let layer = hexLayers[idx];
+                                if (!layer) {
+                                    const boundary = typeof h3.cellToBoundary === 'function' ? h3.cellToBoundary(idx) : h3.h3ToGeoBoundary(idx);
+                                    layer = L.polygon(boundary, { interactive: true }).addTo(map);
+                                    hexLayers[idx] = layer;
+                                }
+                                layer.setStyle({
+                                    color: '#27ae60',
+                                    weight: 2,
+                                    dashArray: null,
+                                    fillColor: '#2ecc71',
+                                    fillOpacity: 0.3
+                                });
                             }
-
-                            layer.setStyle({
-                                color: '#059669',
-                                weight: 1.5,
-                                dashArray: null,
-                                fillColor: '#10b981',
-                                fillOpacity: 0.35
-                            });
                         }
                     });
                 }
-            } catch (e) {
-                console.error('Data loading error', e);
-            }
-
-            console.log('🎉 H3 Grid Strategy Ready!');
+            } catch (err) { console.error(err); }
         };
     </script>
 </body>
