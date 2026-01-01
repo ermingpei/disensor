@@ -228,59 +228,121 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
-        console.log('🚀 DiSensor loading...');
+        console.log('🚀 Qubit Rhythm - DiSensor Loading...');
 
-        // Initialize when page loads
-        window.onload = function () {
+        // Helper function: Parse IEEE 754 Double (Little Endian) from WKB hex
+        function parseHexString(hex) {
+            if (!hex || hex.length < 50) return null;
+            try {
+                // WKB offset for Point (typical PostGIS format)
+                const hexLng = hex.substring(18, 34);
+                const hexLat = hex.substring(34, 50);
+
+                const buffer = new ArrayBuffer(8);
+                const view = new DataView(buffer);
+
+                // Parse Lng
+                for (let i = 0; i < 16; i += 2) {
+                    view.setUint8(i / 2, parseInt(hexLng.substr(i, 2), 16));
+                }
+                const lng = view.getFloat64(0, true);
+
+                // Parse Lat
+                for (let i = 0; i < 16; i += 2) {
+                    view.setUint8(i / 2, parseInt(hexLat.substr(i, 2), 16));
+                }
+                const lat = view.getFloat64(0, true);
+
+                return { lat, lng };
+            } catch (e) {
+                return null;
+            }
+        }
+
+        window.onload = async function () {
             console.log('📍 Initializing map...');
-
-            // Initialize map - Edmonton, Canada
             const map = L.map('map').setView([53.5461, -113.4938], 11);
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                 attribution: '© OpenStreetMap contributors'
             }).addTo(map);
 
-            console.log('✅ Map created');
+            const SUPABASE_URL = 'https://alczyftlhcdsifjntcbh.supabase.co';
+            const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFsY3p5ZnRsaGNkc2lmam50Y2JoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY5NzE1MTAsImV4cCI6MjA4MjU0NzUxMH0.839c_boZy57LB-gBXuJjevubC2VVYmvNkQdTg1uB-y0';
+            const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-            // Add Edmonton sensor locations
-            const locations = [
-                [53.5461, -113.4938, "Downtown Edmonton"],
-                [53.5232, -113.5263, "University of Alberta"],
-                [53.5225, -113.6257, "West Edmonton Mall"],
-                [53.5710, -113.4912, "Northside"],
-                [53.4665, -113.4925, "Southside"],
-                [53.3900, -113.4685, "Millwoods"]
-            ];
-
-            locations.forEach(([lat, lng, name]) => {
-                L.circleMarker([lat, lng], {
-                    radius: 8,
-                    fillColor: '#667eea',
-                    color: 'white',
-                    weight: 2,
-                    fillOpacity: 0.8
-                }).addTo(map).bindPopup(`<b>${name}</b><br>Active Sensor`);
-            });
-
-            console.log('✅ Added 6 sensor markers');
-
-            // Try to load real data from Supabase
+            // 1. Load Statistics
             try {
-                const SUPABASE_URL = 'https://alczyftlhcdsifjntcbh.supabase.co';
-                const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFsY3p5ZnRsaGNkc2lmam50Y2JoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY5NzE1MTAsImV4cCI6MjA4MjU0NzUxMH0.839c_boZy57LB-gBXuJjevubC2VVYmvNkQdTg1uB-y0';
+                // Total Count
+                const { count } = await supabase.from('readings').select('*', { count: 'exact', head: true });
+                if (count) {
+                    document.getElementById('data-points').textContent = count > 1000 ? (count / 1000).toFixed(1) + 'K' : count;
+                }
 
-                const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+                // Active Nodes (last 24h)
+                const { data: recentNodes } = await supabase
+                    .from('readings')
+                    .select('node_id')
+                    .gte('timestamp', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString());
 
-                supabase.from('readings').select('*', { count: 'exact', head: true }).then(({ count, error }) => {
-                    if (error) {
-                        console.log('ℹ️ Using mock data (Supabase query failed)');
-                    } else if (count > 0) {
-                        document.getElementById('data-points').textContent = count > 1000 ? `${Math.floor(count / 1000)}K` : count;
-                        console.log(`✅ Real data: ${count} readings`);
-                    }
-                });
+                const uniqueNodes = new Set(recentNodes?.map(r => r.node_id) || []);
+                if (uniqueNodes.size > 0) {
+                    document.getElementById('active-sensors').textContent = uniqueNodes.size;
+                }
             } catch (e) {
-                console.log('ℹ️ Using mock data');
+                console.warn('Stats load failed', e);
+            }
+
+            // 2. Load Real Map Data
+            try {
+                const { data: readings, error } = await supabase
+                    .from('readings')
+                    .select('location, pressure_hpa, decibel_db, timestamp, node_id')
+                    .order('timestamp', { ascending: false })
+                    .limit(100);
+
+                if (readings && readings.length > 0) {
+                    console.log(`✅ Loaded ${readings.length} real-time data points`);
+                    readings.forEach(r => {
+                        const pos = parseHexString(r.location);
+                        if (pos) {
+                            const isRecent = (new Date() - new Date(r.timestamp)) < 10 * 60 * 1000; // Last 10 mins
+                            L.circleMarker([pos.lat, pos.lng], {
+                                radius: isRecent ? 10 : 7,
+                                fillColor: isRecent ? '#10b981' : '#3b82f6', // Green for live, Blue for history
+                                color: 'white',
+                                weight: 2,
+                                fillOpacity: isRecent ? 0.9 : 0.6
+                            }).addTo(map).bindPopup(`
+                                <div style="font-family: sans-serif;">
+                                    <h4 style="margin:0; color:#667eea;">Sentinel Node</h4>
+                                    <div style="font-size:11px; color:#999; margin-bottom:5px;">ID: ${r.node_id.slice(0, 8)}...</div>
+                                    <hr style="border:0; border-top:1px solid #eee; margin:5px 0;">
+                                    <div><b>Pressure:</b> ${r.pressure_hpa.toFixed(1)} hPa</div>
+                                    <div><b>Noise:</b> ${r.decibel_db.toFixed(1)} dB</div>
+                                    <div style="margin-top:5px; font-size:10px; color:#aaa;">${new Date(r.timestamp).toLocaleString()}</div>
+                                </div>
+                            `);
+                        }
+                    });
+                } else {
+                    throw new Error('No readings found');
+                }
+            } catch (e) {
+                console.log('ℹ️ Showing mock data (No recent readings in DB)');
+                const demoPoints = [
+                    [53.5461, -113.4938, "Downtown"], [53.5232, -113.5263, "University"],
+                    [53.5225, -113.6257, "West Mall"], [53.5710, -113.4912, "Northside"],
+                    [53.4665, -113.4925, "Southside"], [53.3900, -113.4685, "Millwoods"]
+                ];
+                demoPoints.forEach(([lat, lng, name]) => {
+                    L.circleMarker([lat, lng], {
+                        radius: 8,
+                        fillColor: '#667eea',
+                        color: 'white',
+                        weight: 2,
+                        fillOpacity: 0.8
+                    }).addTo(map).bindPopup(`<b>${name} (Demo)</b><br>Currently Offline`);
+                });
             }
 
             console.log('🎉 DiSensor initialized successfully!');
