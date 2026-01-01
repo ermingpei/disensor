@@ -293,22 +293,23 @@
                     };
 
                     const edmontonInner = getH3Index(53.5461, -113.4938, res);
-                    const neighbors = getDisk(edmontonInner, 12);
+                    const neighbors = getDisk(edmontonInner, 25); // 扩大到25圈以覆盖郊区
 
                     neighbors.forEach(h3Index => {
                         const boundary = getBoundary(h3Index);
                         const polygon = L.polygon(boundary, {
-                            color: '#000',
-                            weight: 0.5,
-                            fillColor: '#666',
-                            fillOpacity: 0.05, // 淡淡的灰色网格
+                            color: '#999',
+                            weight: 0.8,
+                            dashArray: '5, 8', // 虚线效果
+                            fillColor: 'transparent',
+                            fillOpacity: 0,
                             interactive: true
                         }).addTo(map);
 
-                        polygon.bindPopup(`Zone ID: ${h3Index}<br>Status: Available`);
+                        polygon.bindPopup(`Zone ID: ${h3Index}<br>Status: Available for Deployment`);
                         hexLayers[h3Index] = polygon;
                     });
-                    console.log(`✅ Grid generated: ${neighbors.length} cells`);
+                    console.log(`✅ Professional Grid generated: ${neighbors.length} cells`);
                 } catch (e) {
                     console.error('Grid generation failed:', e);
                 }
@@ -321,7 +322,7 @@
                 if (count) {
                     document.getElementById('data-points').textContent = count > 1000 ? (count / 1000).toFixed(1) + 'K' : count;
                 }
-                document.getElementById('active-sensors').textContent = '6'; // Mock active count
+                document.getElementById('active-sensors').textContent = '6';
             } catch (e) { }
 
             // 3. 加载真实数据并点亮格子
@@ -330,7 +331,7 @@
                     .from('readings')
                     .select('location, pressure_hpa, decibel_db, timestamp, node_id')
                     .order('timestamp', { ascending: false })
-                    .limit(200);
+                    .limit(300);
 
                 if (readings) {
                     readings.forEach(r => {
@@ -340,30 +341,23 @@
                             const layer = hexLayers[h3Index];
 
                             if (layer) {
-                                // 点亮这个格子
+                                // 点亮这个格子 - 半透明高级质感
                                 layer.setStyle({
                                     color: '#667eea',
                                     weight: 2,
+                                    dashArray: null, // 实线表示激活
                                     fillColor: '#667eea',
-                                    fillOpacity: 0.5
+                                    fillOpacity: 0.35 // 保持通透感
                                 });
                                 layer.bindPopup(`
                                     <div style="font-family: sans-serif;">
-                                        <h4 style="margin:0; color:#667eea;">Active Hex Zone</h4>
+                                        <h4 style="margin:0; color:#667eea;">Sentinel Coverage</h4>
+                                        <hr style="border:0; border-top:1px solid #eee; margin:5px 0;">
                                         <div><b>Pressure:</b> ${r.pressure_hpa.toFixed(1)} hPa</div>
                                         <div><b>Noise:</b> ${r.decibel_db.toFixed(1)} dB</div>
-                                        <div style="font-size:10px; color:#aaa;">Last Update: ${new Date(r.timestamp).toLocaleString()}</div>
+                                        <div style="font-size:10px; color:#aaa; margin-top:5px;">Last Data: ${new Date(r.timestamp).toLocaleString()}</div>
                                     </div>
                                 `);
-                            } else {
-                                // 如果不在初始网格内，则单独画出
-                                const boundary = h3.cellToBoundary(h3Index);
-                                L.polygon(boundary, {
-                                    color: '#10b981',
-                                    weight: 2,
-                                    fillColor: '#10b981',
-                                    fillOpacity: 0.5
-                                }).addTo(map).bindPopup('Remote Sensor Active');
                             }
                         }
                     });
