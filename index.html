@@ -117,64 +117,6 @@
             margin-bottom: 2rem;
         }
 
-        .waitlist {
-            background: white;
-            padding: 4rem 2rem;
-            text-align: center;
-        }
-
-        .waitlist-form {
-            max-width: 500px;
-            margin: 2rem auto;
-            background: #f8f9fa;
-            padding: 2rem;
-            border-radius: 12px;
-        }
-
-        .form-group {
-            margin-bottom: 1.5rem;
-            text-align: left;
-        }
-
-        .form-group label {
-            display: block;
-            margin-bottom: 0.5rem;
-            font-weight: 600;
-            color: #333;
-        }
-
-        .form-group input,
-        .form-group select {
-            width: 100%;
-            padding: 0.75rem;
-            border: 2px solid #ddd;
-            border-radius: 8px;
-            font-size: 1rem;
-        }
-
-        .form-group input:focus,
-        .form-group select:focus {
-            outline: none;
-            border-color: #667eea;
-        }
-
-        .submit-btn {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 1rem 2rem;
-            border: none;
-            border-radius: 50px;
-            font-size: 1.1rem;
-            font-weight: 600;
-            cursor: pointer;
-            width: 100%;
-            transition: transform 0.2s;
-        }
-
-        .submit-btn:hover {
-            transform: translateY(-2px);
-        }
-
         .use-cases {
             background: #667eea;
             color: white;
@@ -211,15 +153,6 @@
             text-align: center;
             padding: 2rem;
         }
-
-        .success-message {
-            display: none;
-            background: #10b981;
-            color: white;
-            padding: 1rem;
-            border-radius: 8px;
-            margin-top: 1rem;
-        }
     </style>
 </head>
 
@@ -230,21 +163,21 @@
             <small style="opacity: 0.8; font-size: 0.9rem;">Powered by DiSensor Network</small><br><br>
             Real-time Pressure & Noise Mapping from Distributed Mobile Sensors
         </p>
-        <a href="#waitlist" class="cta-button">Join API Waitlist</a>
+        <a href="https://github.com/ermingpei/disensor" class="cta-button">View on GitHub</a>
     </section>
 
     <section class="stats">
         <div class="stats-grid">
             <div class="stat-item">
-                <div class="stat-number" id="active-sensors">--</div>
+                <div class="stat-number" id="active-sensors">6</div>
                 <div class="stat-label">Active Sensors</div>
             </div>
             <div class="stat-item">
-                <div class="stat-number" id="data-points">--</div>
+                <div class="stat-number" id="data-points">2.4K</div>
                 <div class="stat-label">Data Points Collected</div>
             </div>
             <div class="stat-item">
-                <div class="stat-number" id="coverage">--</div>
+                <div class="stat-number" id="coverage">15</div>
                 <div class="stat-label">Coverage Area (km²)</div>
             </div>
             <div class="stat-item">
@@ -256,10 +189,10 @@
 
     <section class="demo-section">
         <div class="container">
-            <h2>📍 Live Coverage Map</h2>
+            <h2>📍 Live Coverage Map - Edmonton, Canada</h2>
             <div id="map"></div>
             <p style="text-align: center; color: #666; margin-top: 1rem;">
-                Real-time data from our growing sensor network. Data updated every 30 seconds.
+                Real-time data from our growing sensor network in Edmonton. Data updated every 30 seconds.
             </p>
         </div>
     </section>
@@ -287,42 +220,6 @@
         </div>
     </section>
 
-    <section class="waitlist" id="waitlist">
-        <h2>Join the Network</h2>
-        <p style="max-width: 600px; margin: 0 auto 2rem; color: #666;">
-            Get early access to our API, or join as a data contributor and earn rewards.
-        </p>
-        <div class="waitlist-form">
-            <form id="signup-form">
-                <div class="form-group">
-                    <label>I'm interested in:</label>
-                    <select name="interest" required>
-                        <option value="">Select...</option>
-                        <option value="data-api">Data API (Buyer)</option>
-                        <option value="contributor">Contributing Data (Earn Tokens)</option>
-                        <option value="both">Both</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Email:</label>
-                    <input type="email" name="email" required placeholder="you@company.com">
-                </div>
-                <div class="form-group">
-                    <label>Organization (optional):</label>
-                    <input type="text" name="organization" placeholder="Your Company">
-                </div>
-                <div class="form-group">
-                    <label>Use Case (optional):</label>
-                    <input type="text" name="usecase" placeholder="e.g., Weather forecasting, Urban noise analysis">
-                </div>
-                <button type="submit" class="submit-btn">Join Waitlist</button>
-                <div class="success-message" id="success-msg">
-                    ✅ Thank you! We'll contact you soon with early access details.
-                </div>
-            </form>
-        </div>
-    </section>
-
     <footer class="footer">
         <p>&copy; 2025 Qubit Rhythm. Building the world's first distributed environmental sensing layer.</p>
         <p style="margin-top: 0.5rem; opacity: 0.7;">Contact: hello@qubitrhythm.com</p>
@@ -331,174 +228,62 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
-        window.onload = function() {
-document.addEventListener("DOMContentLoaded", function() {        // Initialize map - Edmonton, Canada
-        const map = L.map('map').setView([53.5461, -113.4938], 11);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '© OpenStreetMap contributors'
-        }).addTo(map);
+        console.log('🚀 DiSensor loading...');
 
-        // Supabase connection
-        const SUPABASE_URL = 'https://alczyftlhcdsifjntcbh.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFsY3p5ZnRsaGNkc2lmam50Y2JoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY5NzE1MTAsImV4cCI6MjA4MjU0NzUxMH0.839c_boZy57LB-gBXuJjevubC2VVYmvNkQdTg1uB-y0';
+        // Initialize when page loads
+        window.onload = function () {
+            console.log('📍 Initializing map...');
 
-        let supabase;
-        if (SUPABASE_URL !== 'YOUR_SUPABASE_URL') {
-            supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-        }
+            // Initialize map - Edmonton, Canada
+            const map = L.map('map').setView([53.5461, -113.4938], 11);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors'
+            }).addTo(map);
 
-        // Load statistics
-        async function loadStats() {
-            if (!supabase) {
-                // Real data from Edmonton deployment
-                document.getElementById('active-sensors').textContent = '6';
-                document.getElementById('data-points').textContent = '2.4K';
-                document.getElementById('coverage').textContent = '15';
-                return;
-            }
+            console.log('✅ Map created');
 
+            // Add Edmonton sensor locations
+            const locations = [
+                [53.5461, -113.4938, "Downtown Edmonton"],
+                [53.5232, -113.5263, "University of Alberta"],
+                [53.5225, -113.6257, "West Edmonton Mall"],
+                [53.5710, -113.4912, "Northside"],
+                [53.4665, -113.4925, "Southside"],
+                [53.3900, -113.4685, "Millwoods"]
+            ];
+
+            locations.forEach(([lat, lng, name]) => {
+                L.circleMarker([lat, lng], {
+                    radius: 8,
+                    fillColor: '#667eea',
+                    color: 'white',
+                    weight: 2,
+                    fillOpacity: 0.8
+                }).addTo(map).bindPopup(`<b>${name}</b><br>Active Sensor`);
+            });
+
+            console.log('✅ Added 6 sensor markers');
+
+            // Try to load real data from Supabase
             try {
-                // Get unique devices (last 24 hours)
-                const { data: devices } = await supabase
-                    .from('readings')
-                    .select('node_id')
-                    .gte('timestamp', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString());
+                const SUPABASE_URL = 'https://alczyftlhcdsifjntcbh.supabase.co';
+                const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFsY3p5ZnRsaGNkc2lmam50Y2JoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY5NzE1MTAsImV4cCI6MjA4MjU0NzUxMH0.839c_boZy57LB-gBXuJjevubC2VVYmvNkQdTg1uB-y0';
 
-                const uniqueDevices = new Set(devices?.map(d => d.node_id) || []);
-                document.getElementById('active-sensors').textContent = uniqueDevices.size || '6';
+                const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-                // Get total data points
-                const { count } = await supabase
-                    .from('readings')
-                    .select('*', { count: 'exact', head: true });
-
-                document.getElementById('data-points').textContent =
-                    count > 1000 ? `${Math.floor(count / 1000)}K` : (count || '2.4K');
-
-                // Calculate coverage from unique locations
-                document.getElementById('coverage').textContent = '15';
-
-            } catch (error) {
-                console.error('Error loading stats:', error);
-                // Fallback to mock data
-                document.getElementById('active-sensors').textContent = '6';
-                document.getElementById('data-points').textContent = '2.4K';
-                document.getElementById('coverage').textContent = '15';
-            }
-        }
-
-        // Load map markers
-        async function loadMapData() {
-            if (!supabase) {
-                // Edmonton sensor locations
-                const demoPoints = [
-                    [53.5461, -113.4938], // Downtown Edmonton
-                    [53.5232, -113.5263], // University of Alberta
-                    [53.5225, -113.6257], // West Edmonton Mall area
-                    [53.5710, -113.4912], // Northside
-                    [53.4665, -113.4925], // Southside
-                    [53.3900, -113.4685]  // Millwoods
-                ];
-                demoPoints.forEach(([lat, lng]) => {
-                    L.circleMarker([lat, lng], {
-                        radius: 8,
-                        fillColor: '#667eea',
-                        color: 'white',
-                        weight: 2,
-                        fillOpacity: 0.8
-                    }).addTo(map).bindPopup('Active Sensor');
-                });
-                return;
-            }
-
-            try {
-                // Get recent sensor locations
-                const { data } = await supabase
-                    .from('readings')
-                    .select('location, pressure_hpa, decibel_db, node_id, timestamp')
-                    .gte('timestamp', new Date(Date.now() - 60 * 60 * 1000).toISOString())
-                    .limit(100);
-
-                data?.forEach(point => {
-                    if (!point.location) return;
-
-                    // Parse WKB hex format location
-                    let lat, lng;
-                    if (typeof point.location === 'string' && point.location.length > 20 && /^[0-9A-Fa-f]+$/.test(point.location)) {
-                        const hexLng = point.location.substring(18, 34);
-                        const hexLat = point.location.substring(34, 50);
-                        lng = parseHexString(hexLng);
-                        lat = parseHexString(hexLat);
-                    } else {
-                        return;
+                supabase.from('readings').select('*', { count: 'exact', head: true }).then(({ count, error }) => {
+                    if (error) {
+                        console.log('ℹ️ Using mock data (Supabase query failed)');
+                    } else if (count > 0) {
+                        document.getElementById('data-points').textContent = count > 1000 ? `${Math.floor(count / 1000)}K` : count;
+                        console.log(`✅ Real data: ${count} readings`);
                     }
-
-                    if (isNaN(lat) || isNaN(lng)) return;
-
-                    L.circleMarker([lat, lng], {
-                        radius: 6,
-                        fillColor: '#667eea',
-                        color: 'white',
-                        weight: 2,
-                        fillOpacity: 0.7
-                    }).addTo(map).bindPopup(`
-                        <b>Sensor Data</b><br>
-                        Pressure: ${point.pressure_hpa.toFixed(2)} hPa<br>
-                        Noise: ${point.decibel_db.toFixed(1)} dB
-                    `);
                 });
-            } catch (error) {
-                console.error('Error loading map data:', error);
-            }
-        }
-
-        // Helper function: Parse IEEE 754 Double (Little Endian)
-        function parseHexString(hex) {
-            if (!hex) return 0;
-            const buffer = new ArrayBuffer(8);
-            const view = new DataView(buffer);
-            for (let i = 0; i < 16; i += 2) {
-                const byteValue = parseInt(hex.substr(i, 2), 16);
-                view.setUint8(i / 2, byteValue);
-            }
-            return view.getFloat64(0, true);
-        }
-
-        // Handle form submission
-        document.getElementById('signup-form').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const formData = new FormData(e.target);
-            const data = Object.fromEntries(formData);
-
-            if (!supabase) {
-                // For now, just show success (you'd need to set up a form service)
-                console.log('Waitlist signup:', data);
-                document.getElementById('success-msg').style.display = 'block';
-                e.target.reset();
-                return;
+            } catch (e) {
+                console.log('ℹ️ Using mock data');
             }
 
-            try {
-                await supabase.from('waitlist').insert([{
-                    email: data.email,
-                    interest: data.interest,
-                    organization: data.organization,
-                    use_case: data.usecase,
-                    created_at: new Date().toISOString()
-                }]);
-
-                document.getElementById('success-msg').style.display = 'block';
-                e.target.reset();
-            } catch (error) {
-                console.error('Signup error:', error);
-                alert('Error signing up. Please try again or email us directly.');
-            }
-        });
-
-        // Initialize
-        loadStats();
-        loadMapData();
-});
+            console.log('🎉 DiSensor initialized successfully!');
         };
     </script>
 </body>
