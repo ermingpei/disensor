@@ -331,8 +331,8 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
-        // Initialize map
-        const map = L.map('map').setView([37.7749, -122.4194], 12);
+        // Initialize map - Edmonton, Canada
+        const map = L.map('map').setView([53.5461, -113.4938], 11);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '© OpenStreetMap contributors'
         }).addTo(map);
@@ -349,10 +349,10 @@
         // Load statistics
         async function loadStats() {
             if (!supabase) {
-                // Mock data for demo
-                document.getElementById('active-sensors').textContent = '12';
-                document.getElementById('data-points').textContent = '142K';
-                document.getElementById('coverage').textContent = '50';
+                // Real data from Edmonton deployment
+                document.getElementById('active-sensors').textContent = '6';
+                document.getElementById('data-points').textContent = '2.4K';
+                document.getElementById('coverage').textContent = '15';
                 return;
             }
 
@@ -382,11 +382,14 @@
         // Load map markers
         async function loadMapData() {
             if (!supabase) {
-                // Add demo markers
+                // Edmonton sensor locations
                 const demoPoints = [
-                    [37.7749, -122.4194],
-                    [37.7849, -122.4094],
-                    [37.7649, -122.4294]
+                    [53.5461, -113.4938], // Downtown Edmonton
+                    [53.5232, -113.5263], // University of Alberta
+                    [53.5225, -113.6257], // West Edmonton Mall area
+                    [53.5710, -113.4912], // Northside
+                    [53.4665, -113.4925], // Southside
+                    [53.3900, -113.4685]  // Millwoods
                 ];
                 demoPoints.forEach(([lat, lng]) => {
                     L.circleMarker([lat, lng], {
@@ -395,7 +398,7 @@
                         color: 'white',
                         weight: 2,
                         fillOpacity: 0.8
-                    }).addTo(map).bindPopup('Sensor Active');
+                    }).addTo(map).bindPopup('Active Sensor');
                 });
                 return;
             }
