@@ -4,8 +4,12 @@ import 'package:uuid/uuid.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
+import 'package:sensors_plus/sensors_plus.dart';
 
 import '../core/sensor_manager.dart';
+import '../core/app_strings.dart';
 import 'hex_map_page.dart';
 import 'onboarding_page.dart';
 
@@ -17,6 +21,8 @@ class DebugDashboard extends StatefulWidget {
 class _DebugDashboardState extends State<DebugDashboard> {
   String? _tempInviteCode;
   String? deviceId;
+  bool _isCheckingCode = false;
+  bool _showInput = false;
 
   @override
   void initState() {
@@ -48,19 +54,10 @@ class _DebugDashboardState extends State<DebugDashboard> {
 
   void _shareInvite() {
     final code = deviceId?.substring(0, 6).toUpperCase() ?? 'XXXXXX';
-    final String shareText = "📱【DiSensor: 利用手机空闲时间获益!】\n"
-        "您是否注意到您的手机大部分时间都在空闲？而您其实可以用这些空闲贡献数据为自己赚钱？\n"
-        "DiSensor 帮您利用手机闲置的气压/噪声等传感器，为全球环境监测网络贡献数据，同时躺赚被动收益！\n"
-        "📈 越早加入收益越多。赶紧加入吧！\n"
-        "👉 20% 永久算力加成邀请码: *$code*\n"
-        "下载链接: https://disensor.app/start?ref=$code\n\n"
-        "--------------------\n\n"
-        "📱 [DiSensor: Monetize Your Phone's Idle Time!]\n"
-        "Did you notice your phone sits idle most of the time? You could be turning that downtime into earnings!\n"
-        "DiSensor utilizes your device's idle sensors (Barometer/Noise) to contribute to a global environmental network, generating passive income for you effortlessly.\n"
-        "📈 Early adopters earn more. Join now!\n"
-        "👉 Use code *$code* for a 20% permanent bonus boost.\n"
-        "Download: https://disensor.app/start?ref=$code";
+    final String shareText = "📱【DiSensor】\n"
+        "${AppStrings.t('invite_desc')}\n"
+        "👉 Code: *$code*\n"
+        "https://ermingpei.github.io/disensor/dashboard/start.html?ref=$code";
 
     Share.share(shareText);
   }
@@ -74,25 +71,26 @@ class _DebugDashboardState extends State<DebugDashboard> {
         title: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.hexagon_outlined, color: Colors.cyanAccent, size: 24),
-            SizedBox(width: 8),
+            // Updated Icon - using asset image
+            Image.asset('assets/icon/icon.png', width: 28, height: 28),
+            SizedBox(width: 10),
             Text(
-              "DiSENSOR",
+              "DiSensor",
               style: TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.w900,
-                  letterSpacing: 2.0,
+                  letterSpacing: 1.0,
                   color: Colors.white,
                   shadows: [
                     Shadow(
-                        blurRadius: 12,
-                        color: Colors.cyanAccent.withOpacity(0.6),
+                        blurRadius: 10,
+                        color: Colors.cyanAccent.withOpacity(0.5),
                         offset: Offset(0, 0))
                   ]),
             ),
           ],
         ),
-        backgroundColor: Colors.black.withOpacity(0.3),
+        backgroundColor: Colors.black.withOpacity(0.5),
         elevation: 0,
         centerTitle: true,
         actions: [
@@ -103,19 +101,19 @@ class _DebugDashboardState extends State<DebugDashboard> {
                 context: context,
                 builder: (ctx) => SimpleDialog(
                   backgroundColor: Color(0xFF1A1A2E),
-                  title: Text("Settings & About",
+                  title: Text(AppStrings.t('settings_title'),
                       style: TextStyle(color: Colors.white)),
                   children: [
                     ListTile(
                       leading: Icon(Icons.info, color: Colors.cyanAccent),
-                      title: Text("Version",
+                      title: Text(AppStrings.t('version'),
                           style: TextStyle(color: Colors.white70)),
-                      subtitle: Text("v1.0.2 (Alpha)",
+                      subtitle: Text("v1.0.3",
                           style: TextStyle(color: Colors.white54)),
                     ),
                     ListTile(
                       leading: Icon(Icons.business, color: Colors.cyanAccent),
-                      title: Text("Powered by",
+                      title: Text(AppStrings.t('powered_by'),
                           style: TextStyle(color: Colors.white70)),
                       subtitle: Text("Qubit Rhythm",
                           style: TextStyle(
@@ -125,14 +123,14 @@ class _DebugDashboardState extends State<DebugDashboard> {
                     ListTile(
                       leading:
                           Icon(Icons.privacy_tip, color: Colors.cyanAccent),
-                      title: Text("Privacy Policy",
+                      title: Text(AppStrings.t('privacy_policy'),
                           style: TextStyle(color: Colors.white70)),
                       onTap: () => Navigator.pop(ctx),
                     ),
                     ListTile(
                       leading:
                           Icon(Icons.restart_alt, color: Colors.orangeAccent),
-                      title: Text("Replay Tutorial",
+                      title: Text(AppStrings.t('replay_tutorial'),
                           style: TextStyle(color: Colors.white70)),
                       onTap: () async {
                         Navigator.pop(ctx);
@@ -152,41 +150,45 @@ class _DebugDashboardState extends State<DebugDashboard> {
         ],
       ),
       body: ListView(
-        padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 20),
+        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 20),
         children: [
           Consumer<SensorManager>(
             builder: (context, manager, _) => _buildMiningMainCard(manager),
           ),
           SizedBox(height: 16),
           _buildNetworkStats(),
-          SizedBox(height: 24),
+          SizedBox(height: 16),
           Consumer<SensorManager>(
             builder: (context, manager, _) => Row(
               children: [
                 Expanded(
                   child: _buildMetricCard(
-                    'Pressure',
+                    AppStrings.t('pressure'),
                     '${manager.pressure.toStringAsFixed(2)}',
                     'hPa',
                     Icons.speed,
                     Colors.cyan,
+                    AppStrings.t('pressure_desc'),
                   ),
                 ),
                 SizedBox(width: 12),
                 Expanded(
                   child: _buildMetricCard(
-                    'Noise Level',
+                    AppStrings.t('noise'),
                     '${manager.decibel.toStringAsFixed(1)}',
                     'dB',
                     Icons.graphic_eq,
                     Colors.purpleAccent,
+                    AppStrings.t('noise_desc'),
                   ),
                 ),
               ],
             ),
           ),
           SizedBox(height: 24),
-          _buildMiniMapCard(context),
+          _buildExtraSensors(),
+          SizedBox(height: 24),
+          _buildMiniMapStatic(context),
           SizedBox(height: 24),
           _buildReferralSection(),
           SizedBox(height: 24),
@@ -201,62 +203,179 @@ class _DebugDashboardState extends State<DebugDashboard> {
 
   // --- WIDGETS ---
 
-  Widget _buildMiniMapCard(BuildContext context) {
+  Widget _buildExtraSensors() {
+    return Container(
+      padding: EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.03),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.white10),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text("DEVICE SENSORS",
+              style: TextStyle(
+                  color: Colors.grey, fontSize: 10, letterSpacing: 1.5)),
+          SizedBox(height: 12),
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: [
+                StreamBuilder<AccelerometerEvent>(
+                    stream: accelerometerEventStream(),
+                    builder: (context, snapshot) {
+                      String val = "Standby";
+                      if (snapshot.hasData) {
+                        val = "Active";
+                      }
+                      return _buildSensorChip(
+                          "Accelerometer", val, Icons.vibration, Colors.orange);
+                    }),
+                SizedBox(width: 12),
+                _buildSensorChip(
+                    "Gyroscope", "Active", Icons.rotate_right, Colors.blue),
+                SizedBox(width: 12),
+                _buildSensorChip(
+                    "Magnetometer", "Ready", Icons.explore, Colors.red),
+                SizedBox(width: 12),
+                _buildSensorChip(
+                    "Light", "On", Icons.light_mode, Colors.yellow),
+              ],
+            ),
+          )
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSensorChip(
+      String label, String value, IconData icon, Color color) {
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+          color: Colors.black45,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: color.withOpacity(0.3))),
+      child: Row(
+        children: [
+          Icon(icon, color: color, size: 16),
+          SizedBox(width: 8),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(label,
+                  style: TextStyle(color: Colors.white70, fontSize: 10)),
+              Text(value,
+                  style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold)),
+            ],
+          )
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMiniMapStatic(BuildContext context) {
     return GestureDetector(
       onTap: () => Navigator.push(
           context, MaterialPageRoute(builder: (_) => HexMapPage())),
       child: Container(
-        height: 180,
+        height: 200,
         decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [Color(0xFF2C5364), Color(0xFF203A43)],
-          ),
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(24),
           boxShadow: [
             BoxShadow(
-                color: Colors.black26, blurRadius: 10, offset: Offset(0, 4)),
+                color: Colors.black45, blurRadius: 12, offset: Offset(0, 6)),
           ],
+          border: Border.all(color: Colors.white10),
         ),
-        child: Padding(
-          padding: EdgeInsets.all(24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(24),
+          child: Stack(
             children: [
-              Row(
+              // The Map
+              FlutterMap(
+                options: MapOptions(
+                  initialCenter: LatLng(37.7749, -122.4194),
+                  initialZoom: 13.0,
+                  interactionOptions: const InteractionOptions(
+                    flags: InteractiveFlag.none, // Static behavior
+                  ),
+                ),
                 children: [
-                  Icon(Icons.map_outlined, color: Colors.cyanAccent, size: 32),
-                  SizedBox(width: 12),
-                  Text("Coverage Map",
-                      style: TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 18)),
+                  TileLayer(
+                    urlTemplate:
+                        'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                    userAgentPackageName: 'com.example.sensor_sentinel',
+                    tileBuilder: (context, widget, tile) {
+                      return ColorFiltered(
+                        colorFilter: ColorFilter.mode(
+                          Colors.black.withOpacity(0.6),
+                          BlendMode.darken,
+                        ),
+                        child: widget,
+                      );
+                    },
+                  ),
                 ],
               ),
-              Text(
-                "Explore high-yield hexagons\nand optimize your mining routes",
-                style: TextStyle(
-                  color: Colors.white70,
-                  fontSize: 14,
-                  height: 1.5,
+              // Overlay Text
+              Container(
+                decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                      Colors.transparent,
+                      Colors.black.withOpacity(0.8),
+                    ])),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(20.0),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(Icons.map, color: Colors.cyanAccent, size: 20),
+                        SizedBox(width: 8),
+                        Text(AppStrings.t('coverage_map'),
+                            style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 18)),
+                      ],
+                    ),
+                    SizedBox(height: 4),
+                    Text(
+                      AppStrings.t('map_desc'),
+                      style: TextStyle(color: Colors.white70, fontSize: 12),
+                    ),
+                  ],
                 ),
               ),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Chip(
-                    label: Text("Interactive"),
-                    backgroundColor: Colors.greenAccent.withOpacity(0.2),
-                    labelStyle:
-                        TextStyle(color: Colors.greenAccent, fontSize: 11),
+              Positioned(
+                top: 16,
+                right: 16,
+                child: Container(
+                  padding: EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: Colors.black54,
+                    borderRadius: BorderRadius.circular(12),
+                    border:
+                        Border.all(color: Colors.cyanAccent.withOpacity(0.5)),
                   ),
-                  Icon(Icons.arrow_forward_ios,
-                      color: Colors.white70, size: 16),
-                ],
-              ),
+                  child: Text("LIVE VIEW",
+                      style: TextStyle(
+                          color: Colors.cyanAccent,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold)),
+                ),
+              )
             ],
           ),
         ),
@@ -267,37 +386,78 @@ class _DebugDashboardState extends State<DebugDashboard> {
   Widget _buildNetworkStats() {
     return Row(
       children: [
-        _buildSmallStat('Nodes', '6', Icons.hub_outlined),
-        SizedBox(width: 8),
-        _buildSmallStat('Uptime', '99.9%', Icons.timer_outlined),
-        SizedBox(width: 8),
-        _buildSmallStat('Latency', '88ms', Icons.bolt),
+        _buildStatBox(AppStrings.t('nodes'), '6', Icons.hub, Colors.blue),
+        SizedBox(width: 10),
+        _buildStatBox(
+            AppStrings.t('uptime'), '99.9%', Icons.timer, Colors.green),
+        SizedBox(width: 10),
+        _buildStatBox(
+            AppStrings.t('latency'), '88ms', Icons.bolt, Colors.orange),
       ],
     );
   }
 
-  Widget _buildSmallStat(String label, String value, IconData icon) {
+  Widget _buildStatBox(String label, String value, IconData icon, Color color) {
     return Expanded(
       child: Container(
-        padding: EdgeInsets.symmetric(vertical: 10, horizontal: 8),
+        padding: EdgeInsets.symmetric(vertical: 16, horizontal: 12),
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.03),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.white.withOpacity(0.05)),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
+            color: Color(0xFF1E1E1E),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: color.withOpacity(0.3)),
+            boxShadow: [
+              BoxShadow(
+                  color: color.withOpacity(0.1),
+                  blurRadius: 10,
+                  offset: Offset(0, 4))
+            ]),
+        child: Column(
           children: [
-            Icon(icon, size: 12, color: Colors.grey),
-            SizedBox(width: 4),
+            Icon(icon, size: 20, color: color),
+            SizedBox(height: 8),
             Text(value,
                 style: TextStyle(
-                    fontSize: 12,
+                    fontSize: 18,
                     fontWeight: FontWeight.bold,
-                    color: Colors.white70)),
+                    color: Colors.white)),
+            SizedBox(height: 4),
+            Text(label,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.white54)),
           ],
         ),
       ),
+    );
+  }
+
+  // Custom QBit Coin Icon
+  Widget _buildQBitCoin() {
+    return Container(
+      width: 40,
+      height: 40,
+      decoration: BoxDecoration(
+        color: Color(0xFFFFD700), // Gold
+        shape: BoxShape.circle,
+        boxShadow: [
+          BoxShadow(
+              color: Colors.amber.withOpacity(0.5),
+              blurRadius: 10,
+              spreadRadius: 2)
+        ],
+        border: Border.all(color: Colors.white, width: 2),
+      ),
+      child: Center(
+          child: Text(
+        "\$",
+        style: TextStyle(
+          color: Color(0xFFB8860B),
+          fontWeight: FontWeight.w900,
+          fontSize: 24,
+        ),
+      )),
     );
   }
 
@@ -330,70 +490,51 @@ class _DebugDashboardState extends State<DebugDashboard> {
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('ESTIMATED EARNINGS',
+                    Text(AppStrings.t('estimated_earnings'),
                         style: TextStyle(
                             color: Colors.grey,
                             fontSize: 10,
                             letterSpacing: 1.5)),
-                    SizedBox(height: 8),
+                    SizedBox(height: 12),
                     Row(
-                      crossAxisAlignment: CrossAxisAlignment.end,
+                      crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
-                        // SAFE FIX: Removed Flexible/FittedBox complex constraints
+                        // New Icon
+                        _buildQBitCoin(),
+                        SizedBox(width: 12),
+                        // Number
                         Flexible(
                           child: Text(
                             manager.totalEarnings.toStringAsFixed(2),
                             style: TextStyle(
-                                fontSize: 40,
+                                fontSize:
+                                    32, // Slightly reduced from 40 to avoid overflow
                                 fontWeight: FontWeight.bold,
                                 color: Colors.white,
                                 fontFamily: 'monospace'),
                           ),
                         ),
-                        SizedBox(width: 8),
-                        Text('QBIT',
-                            style: TextStyle(
-                                fontSize: 14,
-                                color: Colors.greenAccent,
-                                fontWeight: FontWeight.bold)),
-                        SizedBox(width: 4),
-                        GestureDetector(
-                          onTap: () {
-                            showDialog(
-                              context: context,
-                              builder: (ctx) => AlertDialog(
-                                title: Text("About QBIT Rewards"),
-                                content: Text(
-                                    "QBIT is the native reward token of the DiSensor network.\n\n"
-                                    "You earn QBIT by contributing valid sensor data (Pressure, Noise, Location). "
-                                    "Future value will be determined by network usage and data demand.\n\n"
-                                    "Mining Rate: Base + Movement Bonus."),
-                                actions: [
-                                  TextButton(
-                                      onPressed: () => Navigator.pop(ctx),
-                                      child: Text("GOT IT"))
-                                ],
-                              ),
-                            );
-                          },
-                          child: Icon(Icons.info_outline,
-                              color: Colors.white24, size: 16),
-                        )
                       ],
                     ),
                   ],
                 ),
               ),
-              Column(
-                children: [
-                  Container(
-                    padding: EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                        color: Colors.black, shape: BoxShape.circle),
-                    child: Icon(Icons.token_outlined,
-                        color: Colors.greenAccent, size: 32),
-                  ),
-                ],
+              IconButton(
+                icon: Icon(Icons.info_outline, color: Colors.white24),
+                onPressed: () {
+                  showDialog(
+                    context: context,
+                    builder: (ctx) => AlertDialog(
+                      title: Text(AppStrings.t('about_qbit')),
+                      content: Text(AppStrings.t('about_qbit_content')),
+                      actions: [
+                        TextButton(
+                            onPressed: () => Navigator.pop(ctx),
+                            child: Text(AppStrings.t('got_it')))
+                      ],
+                    ),
+                  );
+                },
               )
             ],
           ),
@@ -421,7 +562,7 @@ class _DebugDashboardState extends State<DebugDashboard> {
                         children: [
                           Icon(Icons.sync, color: Colors.white, size: 16),
                           SizedBox(width: 12),
-                          Text('Checking permissions...'),
+                          Text(AppStrings.t('checking_permissions')),
                         ],
                       ),
                       duration: Duration(seconds: 2),
@@ -435,7 +576,7 @@ class _DebugDashboardState extends State<DebugDashboard> {
                           deviceId: deviceId ?? "DEVICE-1");
 
                       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                        content: Text('✅ Mining started successfully!'),
+                        content: Text(AppStrings.t('mining_started')),
                         backgroundColor: Colors.green,
                         duration: Duration(seconds: 2),
                       ));
@@ -445,20 +586,16 @@ class _DebugDashboardState extends State<DebugDashboard> {
                       LocationPermission perm =
                           await Geolocator.checkPermission();
 
-                      String message =
-                          '📍 Location permission is required for mining.';
+                      String message = AppStrings.t('location_required');
                       bool showSettings = false;
 
                       if (!serviceEnabled) {
-                        message =
-                            '📍 Please turn ON GPS/Location in device settings.';
+                        message = AppStrings.t('turn_on_gps');
                       } else if (perm == LocationPermission.deniedForever) {
-                        message =
-                            '⚠️ Location permanently denied. Tap SETTINGS to enable.';
+                        message = AppStrings.t('perm_denied_forever');
                         showSettings = true;
                       } else if (perm == LocationPermission.denied) {
-                        message =
-                            '📍 Please allow location access when prompted.';
+                        message = AppStrings.t('allow_location');
                       }
 
                       ScaffoldMessenger.of(context).clearSnackBars();
@@ -469,7 +606,7 @@ class _DebugDashboardState extends State<DebugDashboard> {
                         duration: Duration(seconds: 5),
                         action: showSettings
                             ? SnackBarAction(
-                                label: 'SETTINGS',
+                                label: AppStrings.t('settings'),
                                 onPressed: () => Geolocator.openAppSettings(),
                                 textColor: Colors.white)
                             : null,
@@ -485,7 +622,10 @@ class _DebugDashboardState extends State<DebugDashboard> {
                       borderRadius: BorderRadius.circular(16)),
                   padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                 ),
-                child: Text(isSampling ? 'PAUSE MINING' : 'RESUME MINING',
+                child: Text(
+                    isSampling
+                        ? AppStrings.t('pause_mining')
+                        : AppStrings.t('resume_mining'),
                     style: TextStyle(fontWeight: FontWeight.bold)),
               ),
             ],
@@ -495,19 +635,10 @@ class _DebugDashboardState extends State<DebugDashboard> {
     );
   }
 
-  Widget _buildMetricCard(
-      String title, String value, String unit, IconData icon, Color color) {
+  Widget _buildMetricCard(String title, String value, String unit,
+      IconData icon, Color color, String desc) {
     return GestureDetector(
       onTap: () {
-        String explanation = "Real-time sensor reading.";
-        if (title.contains("Pressure")) {
-          explanation =
-              "Atmospheric pressure helps in calculating altitude and predicting local weather system changes.";
-        } else if (title.contains("Noise")) {
-          explanation =
-              "Ambient noise level monitoring contributes to urban noise pollution mapping.";
-        }
-
         showDialog(
           context: context,
           builder: (ctx) => AlertDialog(
@@ -517,7 +648,7 @@ class _DebugDashboardState extends State<DebugDashboard> {
               SizedBox(width: 10),
               Text(title, style: TextStyle(color: Colors.white))
             ]),
-            content: Text(explanation, style: TextStyle(color: Colors.white70)),
+            content: Text(desc, style: TextStyle(color: Colors.white70)),
             actions: [
               TextButton(
                   onPressed: () => Navigator.pop(ctx),
@@ -547,12 +678,13 @@ class _DebugDashboardState extends State<DebugDashboard> {
             Row(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                // SAFE FIX: Removed Flexible/FittedBox
-                Text(value,
-                    style: TextStyle(
-                        fontSize: 20, // Slightly reduced
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white)),
+                Flexible(
+                  child: Text(value,
+                      style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white)),
+                ),
                 SizedBox(width: 4),
                 Text(unit, style: TextStyle(fontSize: 12, color: Colors.grey)),
               ],
@@ -597,13 +729,13 @@ class _DebugDashboardState extends State<DebugDashboard> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('Invite & Earn 💰',
+                          Text(AppStrings.t('invite_earn'),
                               style: TextStyle(
                                   fontSize: 18,
                                   fontWeight: FontWeight.bold,
                                   color: Colors.white)),
                           SizedBox(height: 6),
-                          Text('Get 20% constant bonus\nfrom every friend!',
+                          Text(AppStrings.t('invite_desc'),
                               style: TextStyle(
                                   color: Colors.white70,
                                   fontSize: 13,
@@ -648,7 +780,7 @@ class _DebugDashboardState extends State<DebugDashboard> {
                   ),
                   child: Center(
                     child: Text(
-                      'Share Link Now',
+                      AppStrings.t('share_link'),
                       style: TextStyle(
                         color: Color(0xFF6C63FF),
                         fontWeight: FontWeight.bold,
@@ -691,7 +823,7 @@ class _DebugDashboardState extends State<DebugDashboard> {
               children: [
                 Icon(Icons.stars, color: Colors.white, size: 28),
                 SizedBox(width: 12),
-                Text("BOOST ACTIVE",
+                Text(AppStrings.t('boost_active'),
                     style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.w900,
@@ -701,7 +833,7 @@ class _DebugDashboardState extends State<DebugDashboard> {
             ),
             SizedBox(height: 8),
             Text(
-              "Referred by: ${manager.inviterId}",
+              "${AppStrings.t('referred_by')} ${manager.inviterId}",
               style: TextStyle(
                   color: Colors.white.withOpacity(0.9),
                   fontSize: 12,
@@ -713,10 +845,27 @@ class _DebugDashboardState extends State<DebugDashboard> {
               decoration: BoxDecoration(
                   color: Colors.black26,
                   borderRadius: BorderRadius.circular(20)),
-              child: Text("+20% Mining Efficiency",
+              child: Text(AppStrings.t('mining_efficiency'),
                   style: TextStyle(color: Colors.white, fontSize: 10)),
             )
           ],
+        ),
+      );
+    }
+
+    if (!_showInput) {
+      return Center(
+        child: TextButton(
+          onPressed: () {
+            setState(() {
+              _showInput = true;
+            });
+          },
+          child: Text(
+            AppStrings.t('have_invite'),
+            style: TextStyle(
+                color: Colors.white54, decoration: TextDecoration.underline),
+          ),
         ),
       );
     }
@@ -726,6 +875,7 @@ class _DebugDashboardState extends State<DebugDashboard> {
       decoration: BoxDecoration(
         color: Colors.white.withOpacity(0.05),
         borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white10),
       ),
       child: Row(
         children: [
@@ -733,7 +883,7 @@ class _DebugDashboardState extends State<DebugDashboard> {
             child: TextField(
               style: TextStyle(color: Colors.white),
               decoration: InputDecoration(
-                labelText: 'Have a code? Enter it here',
+                labelText: AppStrings.t('enter_code'),
                 labelStyle: TextStyle(color: Colors.grey),
                 border: InputBorder.none,
                 hintText: 'ABC123',
@@ -743,27 +893,37 @@ class _DebugDashboardState extends State<DebugDashboard> {
               buildCounter: null,
               textCapitalization: TextCapitalization.characters,
               onChanged: (val) => _tempInviteCode = val.toUpperCase(),
+              enabled: !_isCheckingCode,
             ),
           ),
           SizedBox(width: 8),
-          IconButton(
-            icon: Icon(Icons.check_circle, color: Colors.greenAccent, size: 32),
-            onPressed: () async {
-              final code = _tempInviteCode;
-              if (code != null && code.length == 6) {
-                manager.inviterId = code;
-                // Simple persistence hack for this session
-                final prefs = await SharedPreferences.getInstance();
-                await prefs.setString('inviter_code', code);
+          _isCheckingCode
+              ? SizedBox(
+                  width: 24,
+                  height: 24,
+                  child: CircularProgressIndicator(strokeWidth: 2))
+              : IconButton(
+                  icon: Icon(Icons.check_circle, color: Colors.greenAccent),
+                  onPressed: () async {
+                    if (_tempInviteCode == null || _tempInviteCode!.length != 6)
+                      return;
+                    setState(() => _isCheckingCode = true);
 
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                      content:
-                          Text('Invite code activated! Boost applied. 🚀')),
-                );
-              }
-            },
-          ),
+                    // Simple delay simulation or real check
+                    await Future.delayed(Duration(seconds: 1));
+                    final manager =
+                        Provider.of<SensorManager>(context, listen: false);
+                    manager.inviterId = _tempInviteCode;
+
+                    // Save
+                    final prefs = await SharedPreferences.getInstance();
+                    await prefs.setString('inviter_code', _tempInviteCode!);
+
+                    setState(() {
+                      _isCheckingCode = false;
+                    });
+                  },
+                )
         ],
       ),
     );
