@@ -4,10 +4,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Qubit Rhythm - Distributed Environmental Data Network</title>
+    <title>DiSensor Network - Measuring the World's Pulse</title>
     <meta name="description"
         content="Real-time pressure & noise mapping from distributed sensors. Hyperlocal environmental data API for weather, urban planning, and AI.">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/h3-js"></script>
     <style>
         * {
             margin: 0;
@@ -117,64 +118,6 @@
             margin-bottom: 2rem;
         }
 
-        .waitlist {
-            background: white;
-            padding: 4rem 2rem;
-            text-align: center;
-        }
-
-        .waitlist-form {
-            max-width: 500px;
-            margin: 2rem auto;
-            background: #f8f9fa;
-            padding: 2rem;
-            border-radius: 12px;
-        }
-
-        .form-group {
-            margin-bottom: 1.5rem;
-            text-align: left;
-        }
-
-        .form-group label {
-            display: block;
-            margin-bottom: 0.5rem;
-            font-weight: 600;
-            color: #333;
-        }
-
-        .form-group input,
-        .form-group select {
-            width: 100%;
-            padding: 0.75rem;
-            border: 2px solid #ddd;
-            border-radius: 8px;
-            font-size: 1rem;
-        }
-
-        .form-group input:focus,
-        .form-group select:focus {
-            outline: none;
-            border-color: #667eea;
-        }
-
-        .submit-btn {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 1rem 2rem;
-            border: none;
-            border-radius: 50px;
-            font-size: 1.1rem;
-            font-weight: 600;
-            cursor: pointer;
-            width: 100%;
-            transition: transform 0.2s;
-        }
-
-        .submit-btn:hover {
-            transform: translateY(-2px);
-        }
-
         .use-cases {
             background: #667eea;
             color: white;
@@ -211,40 +154,31 @@
             text-align: center;
             padding: 2rem;
         }
-
-        .success-message {
-            display: none;
-            background: #10b981;
-            color: white;
-            padding: 1rem;
-            border-radius: 8px;
-            margin-top: 1rem;
-        }
     </style>
 </head>
 
 <body>
     <section class="hero">
-        <h1>⚛️ Qubit Rhythm</h1>
-        <p>Measuring the World's Pulse<br>
-            <small style="opacity: 0.8; font-size: 0.9rem;">Powered by DiSensor Network</small><br><br>
+        <h1>🌐 DiSensor Network</h1>
+        <p>Measuring the World's Pulse<br><br>
+            <small style="opacity: 0.8; font-size: 0.9rem;">Powered by Qubit Rhythm</small><br><br>
             Real-time Pressure & Noise Mapping from Distributed Mobile Sensors
         </p>
-        <a href="#waitlist" class="cta-button">Join API Waitlist</a>
+        <a href="https://github.com/ermingpei/disensor" class="cta-button">View on GitHub</a>
     </section>
 
     <section class="stats">
         <div class="stats-grid">
             <div class="stat-item">
-                <div class="stat-number" id="active-sensors">--</div>
+                <div class="stat-number" id="active-sensors">6</div>
                 <div class="stat-label">Active Sensors</div>
             </div>
             <div class="stat-item">
-                <div class="stat-number" id="data-points">--</div>
+                <div class="stat-number" id="data-points">2.4K</div>
                 <div class="stat-label">Data Points Collected</div>
             </div>
             <div class="stat-item">
-                <div class="stat-number" id="coverage">--</div>
+                <div class="stat-number" id="coverage">15</div>
                 <div class="stat-label">Coverage Area (km²)</div>
             </div>
             <div class="stat-item">
@@ -259,7 +193,7 @@
             <h2>📍 Live Coverage Map</h2>
             <div id="map"></div>
             <p style="text-align: center; color: #666; margin-top: 1rem;">
-                Real-time data from our growing sensor network. Data updated every 30 seconds.
+                Real-time data from our growing sensor network. Move the map to explore different areas.
             </p>
         </div>
     </section>
@@ -287,179 +221,125 @@
         </div>
     </section>
 
-    <section class="waitlist" id="waitlist">
-        <h2>Join the Network</h2>
-        <p style="max-width: 600px; margin: 0 auto 2rem; color: #666;">
-            Get early access to our API, or join as a data contributor and earn rewards.
-        </p>
-        <div class="waitlist-form">
-            <form id="signup-form">
-                <div class="form-group">
-                    <label>I'm interested in:</label>
-                    <select name="interest" required>
-                        <option value="">Select...</option>
-                        <option value="data-api">Data API (Buyer)</option>
-                        <option value="contributor">Contributing Data (Earn Tokens)</option>
-                        <option value="both">Both</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Email:</label>
-                    <input type="email" name="email" required placeholder="you@company.com">
-                </div>
-                <div class="form-group">
-                    <label>Organization (optional):</label>
-                    <input type="text" name="organization" placeholder="Your Company">
-                </div>
-                <div class="form-group">
-                    <label>Use Case (optional):</label>
-                    <input type="text" name="usecase" placeholder="e.g., Weather forecasting, Urban noise analysis">
-                </div>
-                <button type="submit" class="submit-btn">Join Waitlist</button>
-                <div class="success-message" id="success-msg">
-                    ✅ Thank you! We'll contact you soon with early access details.
-                </div>
-            </form>
-        </div>
-    </section>
-
     <footer class="footer">
-        <p>&copy; 2025 Qubit Rhythm. Building the world's first distributed environmental sensing layer.</p>
+        <p>&copy; 2025 Qubit Rhythm. DiSensor Network - Building the world's first distributed environmental sensing
+            layer.</p>
         <p style="margin-top: 0.5rem; opacity: 0.7;">Contact: hello@qubitrhythm.com</p>
     </footer>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
-        // Initialize map
-        const map = L.map('map').setView([37.7749, -122.4194], 12);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '© OpenStreetMap contributors'
-        }).addTo(map);
+        console.log('🚀 DiSensor Network powered by Qubit Rhythm Loading...');
 
-        // Supabase connection
-        const SUPABASE_URL = 'YOUR_SUPABASE_URL'; // You'll need to replace this
-        const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY';
-
-        let supabase;
-        if (SUPABASE_URL !== 'YOUR_SUPABASE_URL') {
-            supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        function parseHexString(hex) {
+            if (!hex || hex.length < 50) return null;
+            try {
+                const hexLng = hex.substring(18, 34);
+                const hexLat = hex.substring(34, 50);
+                const buffer = new ArrayBuffer(8);
+                const view = new DataView(buffer);
+                for (let i = 0; i < 16; i += 2) view.setUint8(i / 2, parseInt(hexLng.substr(i, 2), 16));
+                const lng = view.getFloat64(0, true);
+                for (let i = 0; i < 16; i += 2) view.setUint8(i / 2, parseInt(hexLat.substr(i, 2), 16));
+                const lat = view.getFloat64(0, true);
+                return { lat, lng };
+            } catch (e) { return null; }
         }
 
-        // Load statistics
-        async function loadStats() {
-            if (!supabase) {
-                // Mock data for demo
-                document.getElementById('active-sensors').textContent = '12';
-                document.getElementById('data-points').textContent = '142K';
-                document.getElementById('coverage').textContent = '50';
-                return;
+        window.onload = async function () {
+            const map = L.map('map').setView([53.5461, -113.4938], 12);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors'
+            }).addTo(map);
+
+            const SUPABASE_URL = 'https://alczyftlhcdsifjntcbh.supabase.co';
+            const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFsY3p5ZnRsaGNkc2lmam50Y2JoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY5NzE1MTAsImV4cCI6MjA4MjU0NzUxMH0.839c_boZy57LB-gBXuJjevubC2VVYmvNkQdTg1uB-y0';
+            const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+            const res = 7; // Resolution 7 is better for city-wide visibility
+            const hexLayers = {};
+            const pointLayer = L.layerGroup().addTo(map);
+
+            function updateGrid() {
+                if (typeof h3 === 'undefined') return;
+                const center = map.getCenter();
+                try {
+                    const getH3Index = (lat, lng, r) => typeof h3.latLngToCell === 'function' ? h3.latLngToCell(lat, lng, r) : h3.geoToH3(lat, lng, r);
+                    const getBoundary = (idx) => typeof h3.cellToBoundary === 'function' ? h3.cellToBoundary(idx) : h3.h3ToGeoBoundary(idx);
+                    const getDisk = (idx, r) => typeof h3.gridDisk === 'function' ? h3.gridDisk(idx, r) : h3.kRing(idx, r);
+
+                    const centerCell = getH3Index(center.lat, center.lng, res);
+                    const cells = getDisk(centerCell, 12);
+
+                    cells.forEach(idx => {
+                        if (!hexLayers[idx]) {
+                            const boundary = getBoundary(idx);
+                            const poly = L.polygon(boundary, {
+                                color: '#999',
+                                weight: 1,
+                                dashArray: '5, 8',
+                                fillColor: 'transparent',
+                                fillOpacity: 0,
+                                interactive: true
+                            }).addTo(map);
+                            poly.bindPopup(`Zone: ${idx}`);
+                            hexLayers[idx] = poly;
+                        }
+                    });
+                } catch (err) { console.error(err); }
             }
+
+            map.on('moveend', updateGrid);
+            map.on('zoomend', function () {
+                updateGrid();
+                if (map.getZoom() >= 13) { if (!map.hasLayer(pointLayer)) map.addLayer(pointLayer); }
+                else { if (map.hasLayer(pointLayer)) map.removeLayer(pointLayer); }
+            });
+
+            setTimeout(updateGrid, 1000);
 
             try {
-                // Get unique devices (last 24 hours)
-                const { data: devices } = await supabase
-                    .from('sensor_readings')
-                    .select('device_id')
-                    .gte('created_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString());
-
-                const uniqueDevices = new Set(devices?.map(d => d.device_id) || []);
-                document.getElementById('active-sensors').textContent = uniqueDevices.size;
-
-                // Get total data points
-                const { count } = await supabase
-                    .from('sensor_readings')
-                    .select('*', { count: 'exact', head: true });
-
-                document.getElementById('data-points').textContent =
-                    count > 1000 ? `${Math.floor(count / 1000)}K` : count;
-
-            } catch (error) {
-                console.error('Error loading stats:', error);
-            }
-        }
-
-        // Load map markers
-        async function loadMapData() {
-            if (!supabase) {
-                // Add demo markers
-                const demoPoints = [
-                    [37.7749, -122.4194],
-                    [37.7849, -122.4094],
-                    [37.7649, -122.4294]
-                ];
-                demoPoints.forEach(([lat, lng]) => {
-                    L.circleMarker([lat, lng], {
-                        radius: 8,
-                        fillColor: '#667eea',
-                        color: 'white',
-                        weight: 2,
-                        fillOpacity: 0.8
-                    }).addTo(map).bindPopup('Sensor Active');
-                });
-                return;
-            }
+                const { count } = await supabase.from('readings').select('*', { count: 'exact', head: true });
+                if (count) document.getElementById('data-points').textContent = count > 1000 ? (count / 1000).toFixed(1) + 'K' : count;
+            } catch (e) { }
 
             try {
-                // Get recent sensor locations
-                const { data } = await supabase
-                    .from('sensor_readings')
-                    .select('lat, lng, pressure, decibel, created_at')
-                    .gte('created_at', new Date(Date.now() - 60 * 60 * 1000).toISOString())
-                    .limit(100);
+                const { data: readings } = await supabase.from('readings').select('location, pressure_hpa, decibel_db, timestamp, node_id').order('timestamp', { ascending: false }).limit(500);
+                if (readings) {
+                    readings.forEach(r => {
+                        const pos = parseHexString(r.location);
+                        if (pos) {
+                            L.circleMarker([pos.lat, pos.lng], {
+                                radius: 5,
+                                fillColor: '#2ecc71',
+                                color: '#fff',
+                                weight: 1,
+                                fillOpacity: 0.9
+                            }).addTo(pointLayer).bindPopup(`<b>Sensor</b><br>${r.pressure_hpa.toFixed(1)} hPa`);
 
-                data?.forEach(point => {
-                    L.circleMarker([point.lat, point.lng], {
-                        radius: 6,
-                        fillColor: '#667eea',
-                        color: 'white',
-                        weight: 2,
-                        fillOpacity: 0.7
-                    }).addTo(map).bindPopup(`
-                        <b>Sensor Data</b><br>
-                        Pressure: ${point.pressure.toFixed(2)} hPa<br>
-                        Noise: ${point.decibel.toFixed(1)} dB
-                    `);
-                });
-            } catch (error) {
-                console.error('Error loading map data:', error);
-            }
-        }
-
-        // Handle form submission
-        document.getElementById('signup-form').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const formData = new FormData(e.target);
-            const data = Object.fromEntries(formData);
-
-            if (!supabase) {
-                // For now, just show success (you'd need to set up a form service)
-                console.log('Waitlist signup:', data);
-                document.getElementById('success-msg').style.display = 'block';
-                e.target.reset();
-                return;
-            }
-
-            try {
-                await supabase.from('waitlist').insert([{
-                    email: data.email,
-                    interest: data.interest,
-                    organization: data.organization,
-                    use_case: data.usecase,
-                    created_at: new Date().toISOString()
-                }]);
-
-                document.getElementById('success-msg').style.display = 'block';
-                e.target.reset();
-            } catch (error) {
-                console.error('Signup error:', error);
-                alert('Error signing up. Please try again or email us directly.');
-            }
-        });
-
-        // Initialize
-        loadStats();
-        loadMapData();
+                            if (typeof h3 !== 'undefined') {
+                                const getH3Index = (lat, lng, r) => typeof h3.latLngToCell === 'function' ? h3.latLngToCell(lat, lng, r) : h3.geoToH3(lat, lng, r);
+                                const idx = getH3Index(pos.lat, pos.lng, res);
+                                let layer = hexLayers[idx];
+                                if (!layer) {
+                                    const boundary = typeof h3.cellToBoundary === 'function' ? h3.cellToBoundary(idx) : h3.h3ToGeoBoundary(idx);
+                                    layer = L.polygon(boundary, { interactive: true }).addTo(map);
+                                    hexLayers[idx] = layer;
+                                }
+                                layer.setStyle({
+                                    color: '#27ae60',
+                                    weight: 2,
+                                    dashArray: null,
+                                    fillColor: '#2ecc71',
+                                    fillOpacity: 0.3
+                                });
+                            }
+                        }
+                    });
+                }
+            } catch (err) { console.error(err); }
+        };
     </script>
 </body>
 

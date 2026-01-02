@@ -8,7 +8,8 @@ import 'package:latlong2/latlong.dart';
 import 'package:flutter_map/flutter_map.dart'; // Needed for Mini Map
 
 import '../core/sensor_manager.dart';
-import 'hex_map_page.dart'; // Import the new file
+import 'hex_map_page.dart';
+import 'onboarding_page.dart'; // Import for settings navigation
 
 class DebugDashboard extends StatefulWidget {
   @override
@@ -45,15 +46,24 @@ class _DebugDashboardState extends State<DebugDashboard> {
   Future<void> _initDeviceId() async {
     final prefs = await SharedPreferences.getInstance();
     String? storedId = prefs.getString('sentinel_device_id');
+    String? storedInviter = prefs.getString('inviter_code');
 
     if (storedId == null) {
       storedId = const Uuid().v4();
       await prefs.setString('sentinel_device_id', storedId);
     }
 
-    setState(() {
-      deviceId = storedId;
-    });
+    if (mounted) {
+      setState(() {
+        deviceId = storedId;
+      });
+
+      // Update manager if we have a stored inviter code
+      if (storedInviter != null) {
+        final manager = Provider.of<SensorManager>(context, listen: false);
+        manager.inviterId = storedInviter;
+      }
+    }
   }
 
   void _shareInvite() {
@@ -78,16 +88,86 @@ class _DebugDashboardState extends State<DebugDashboard> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[900], // Dark premium background
+      backgroundColor: Color(0xFF121212),
       appBar: AppBar(
-        title: Text('DiSensor', style: TextStyle(fontWeight: FontWeight.bold)),
-        backgroundColor: Colors.transparent,
+        automaticallyImplyLeading: false,
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.hexagon_outlined, color: Colors.cyanAccent, size: 24),
+            SizedBox(width: 8),
+            Text(
+              "DiSENSOR",
+              style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 2.0,
+                  color: Colors.white,
+                  shadows: [
+                    Shadow(
+                        blurRadius: 12,
+                        color: Colors.cyanAccent.withOpacity(0.6),
+                        offset: Offset(0, 0))
+                  ]),
+            ),
+          ],
+        ),
+        backgroundColor: Colors.black.withOpacity(0.3),
         elevation: 0,
         centerTitle: true,
         actions: [
           IconButton(
             icon: Icon(Icons.settings, color: Colors.white70),
-            onPressed: () {},
+            onPressed: () {
+              showDialog(
+                context: context,
+                builder: (ctx) => SimpleDialog(
+                  backgroundColor: Color(0xFF1A1A2E),
+                  title: Text("Settings & About",
+                      style: TextStyle(color: Colors.white)),
+                  children: [
+                    ListTile(
+                      leading: Icon(Icons.info, color: Colors.cyanAccent),
+                      title: Text("Version",
+                          style: TextStyle(color: Colors.white70)),
+                      subtitle: Text("v1.0.2 (Alpha)",
+                          style: TextStyle(color: Colors.white54)),
+                    ),
+                    ListTile(
+                      leading: Icon(Icons.business, color: Colors.cyanAccent),
+                      title: Text("Powered by",
+                          style: TextStyle(color: Colors.white70)),
+                      subtitle: Text("Qubit Rhythm",
+                          style: TextStyle(
+                              color: Colors.white54,
+                              fontWeight: FontWeight.bold)),
+                    ),
+                    ListTile(
+                      leading:
+                          Icon(Icons.privacy_tip, color: Colors.cyanAccent),
+                      title: Text("Privacy Policy",
+                          style: TextStyle(color: Colors.white70)),
+                      onTap: () => Navigator.pop(ctx),
+                    ),
+                    ListTile(
+                      leading:
+                          Icon(Icons.restart_alt, color: Colors.orangeAccent),
+                      title: Text("Replay Tutorial",
+                          style: TextStyle(color: Colors.white70)),
+                      onTap: () async {
+                        Navigator.pop(ctx);
+                        final prefs = await SharedPreferences.getInstance();
+                        await prefs.setBool('seenOnboarding', false);
+                        Navigator.pushReplacement(
+                            context,
+                            MaterialPageRoute(
+                                builder: (_) => OnboardingPage()));
+                      },
+                    ),
+                  ],
+                ),
+              );
+            },
           )
         ],
       ),
@@ -100,12 +180,17 @@ class _DebugDashboardState extends State<DebugDashboard> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  // 1. Status & Controls
-                  _buildStatusCard(manager),
+                  // 1. Mining Status & Earnings
+                  _buildMiningMainCard(manager),
+
+                  SizedBox(height: 16),
+
+                  // 2. Network Stats (Placeholder/Mock for momentum)
+                  _buildNetworkStats(),
 
                   SizedBox(height: 24),
 
-                  // 2. Data Metrics
+                  // 3. Data Metrics
                   Row(
                     children: [
                       Expanded(
@@ -267,14 +352,61 @@ class _DebugDashboardState extends State<DebugDashboard> {
     );
   }
 
-  Widget _buildStatusCard(SensorManager manager) {
+  Widget _buildNetworkStats() {
+    return Row(
+      children: [
+        _buildSmallStat('Nodes', '6', Icons.hub_outlined),
+        SizedBox(width: 8),
+        _buildSmallStat('Uptime', '99.9%', Icons.timer_outlined),
+        SizedBox(width: 8),
+        _buildSmallStat('Latency', '88ms', Icons.bolt),
+      ],
+    );
+  }
+
+  Widget _buildSmallStat(String label, String value, IconData icon) {
+    return Expanded(
+      child: Container(
+        padding: EdgeInsets.symmetric(vertical: 10, horizontal: 8),
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.03),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.white.withOpacity(0.05)),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, size: 12, color: Colors.grey),
+            SizedBox(width: 4),
+            Text(value,
+                style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white70)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMiningMainCard(SensorManager manager) {
     bool isSampling = manager.isSampling;
     return Container(
-      padding: EdgeInsets.all(20),
+      padding: EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.05),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.white.withOpacity(0.1)),
+        color: Color(0xFF1A1A1A),
+        borderRadius: BorderRadius.circular(28),
+        border: Border.all(
+            color: isSampling
+                ? Colors.greenAccent.withOpacity(0.3)
+                : Colors.white10),
+        boxShadow: [
+          if (isSampling)
+            BoxShadow(
+                color: Colors.greenAccent.withOpacity(0.05),
+                blurRadius: 20,
+                spreadRadius: 5),
+        ],
       ),
       child: Column(
         children: [
@@ -284,30 +416,87 @@ class _DebugDashboardState extends State<DebugDashboard> {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Device Status',
-                      style: TextStyle(color: Colors.grey, fontSize: 12)),
-                  SizedBox(height: 4),
+                  Text('ESTIMATED EARNINGS',
+                      style: TextStyle(
+                          color: Colors.grey,
+                          fontSize: 10,
+                          letterSpacing: 1.5)),
+                  SizedBox(height: 8),
                   Row(
+                    crossAxisAlignment: CrossAxisAlignment.baseline,
+                    textBaseline: TextBaseline.alphabetic,
                     children: [
-                      Container(
-                        width: 8,
-                        height: 8,
-                        decoration: BoxDecoration(
-                          color: isSampling
-                              ? Colors.greenAccent
-                              : Colors.redAccent,
-                          shape: BoxShape.circle,
+                      Flexible(
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Text(
+                            manager.totalEarnings.toStringAsFixed(2),
+                            style: TextStyle(
+                                fontSize: 48,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                                fontFamily: 'monospace'),
+                          ),
                         ),
                       ),
                       SizedBox(width: 8),
-                      Text(isSampling ? 'MINING ACTIVE' : 'IDLE',
+                      Text('QBIT',
                           style: TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                            letterSpacing: 1.2,
-                          )),
+                              fontSize: 14,
+                              color: Colors.greenAccent,
+                              fontWeight: FontWeight.bold)),
+                      SizedBox(width: 4),
+                      GestureDetector(
+                        onTap: () {
+                          showDialog(
+                            context: context,
+                            builder: (ctx) => AlertDialog(
+                              title: Text("About QBIT Rewards"),
+                              content: Text(
+                                  "QBIT is the native reward token of the DiSensor network.\n\n"
+                                  "You earn QBIT by contributing valid sensor data (Pressure, Noise, Location). "
+                                  "Future value will be determined by network usage and data demand.\n\n"
+                                  "Mining Rate: Base + Movement Bonus."),
+                              actions: [
+                                TextButton(
+                                    onPressed: () => Navigator.pop(ctx),
+                                    child: Text("GOT IT"))
+                              ],
+                            ),
+                          );
+                        },
+                        child: Icon(Icons.info_outline,
+                            color: Colors.white24, size: 16),
+                      )
                     ],
                   ),
+                ],
+              ),
+              Column(
+                children: [
+                  Container(
+                    padding: EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                        color: Colors.black, shape: BoxShape.circle),
+                    child: Icon(Icons.token_outlined,
+                        color: Colors.greenAccent, size: 32),
+                  ),
+                ],
+              )
+            ],
+          ),
+          SizedBox(height: 24),
+          Divider(color: Colors.white10, height: 1),
+          SizedBox(height: 20),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  Icon(Icons.flash_on, color: Colors.orangeAccent, size: 16),
+                  SizedBox(width: 4),
+                  Text('${manager.miningRate.toStringAsFixed(1)} QBIT/hr',
+                      style: TextStyle(color: Colors.grey, fontSize: 12)),
                 ],
               ),
               ElevatedButton(
@@ -315,34 +504,84 @@ class _DebugDashboardState extends State<DebugDashboard> {
                   if (manager.isSampling) {
                     manager.stopSampling();
                   } else {
+                    // Show loading indicator
+                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                      content: Row(
+                        children: [
+                          SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                  strokeWidth: 2, color: Colors.white)),
+                          SizedBox(width: 16),
+                          Text('Checking permissions...'),
+                        ],
+                      ),
+                      duration: Duration(seconds: 2),
+                      backgroundColor: Colors.blue.shade700,
+                    ));
+
                     bool granted = await manager.requestPermissions();
+
                     if (granted) {
+                      // Permissions granted, start immediately
                       await manager.startRealSampling(
-                          deviceId: deviceId ?? "UNKNOWN-DEVICE");
+                          deviceId: deviceId ?? "DEVICE-1");
+
+                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                        content: Text('✅ Mining started successfully!'),
+                        backgroundColor: Colors.green,
+                        duration: Duration(seconds: 2),
+                      ));
                     } else {
-                      manager.startMockSampling(
-                        pressureSource: Stream.periodic(Duration(seconds: 1),
-                            (i) => 1013.25 + (i % 5) * 0.1),
-                        noiseSource: Stream.periodic(
-                            Duration(seconds: 1), (i) => 35.0 + (i % 10)),
-                        deviceId: deviceId ?? "UNKNOWN-MOCK",
-                      );
+                      // Check what went wrong
+                      bool serviceEnabled =
+                          await Geolocator.isLocationServiceEnabled();
+                      LocationPermission perm =
+                          await Geolocator.checkPermission();
+
+                      String message =
+                          '📍 Location permission is required for mining.';
+                      bool showSettings = false;
+
+                      if (!serviceEnabled) {
+                        message =
+                            '📍 Please turn ON GPS/Location in device settings.';
+                      } else if (perm == LocationPermission.deniedForever) {
+                        message =
+                            '⚠️ Location permanently denied. Tap SETTINGS to enable.';
+                        showSettings = true;
+                      } else if (perm == LocationPermission.denied) {
+                        message =
+                            '📍 Please allow location access when prompted.';
+                      }
+
+                      ScaffoldMessenger.of(context).clearSnackBars();
+                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                        content: Text(message),
+                        backgroundColor:
+                            showSettings ? Colors.orange : Colors.redAccent,
+                        duration: Duration(seconds: 5),
+                        action: showSettings
+                            ? SnackBarAction(
+                                label: 'SETTINGS',
+                                onPressed: () => Geolocator.openAppSettings(),
+                                textColor: Colors.white)
+                            : null,
+                      ));
                     }
                   }
                 },
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 12.0),
-                  child: Text(isSampling ? 'STOP' : 'START'),
-                ),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: isSampling
-                      ? Colors.red.withOpacity(0.8)
-                      : Colors.greenAccent,
+                  backgroundColor:
+                      isSampling ? Color(0xFF2D2D2D) : Colors.greenAccent,
                   foregroundColor: isSampling ? Colors.white : Colors.black,
                   shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(30)),
-                  elevation: 0,
+                      borderRadius: BorderRadius.circular(16)),
+                  padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                 ),
+                child: Text(isSampling ? 'PAUSE MINING' : 'RESUME MINING',
+                    style: TextStyle(fontWeight: FontWeight.bold)),
               ),
             ],
           ),
@@ -353,37 +592,73 @@ class _DebugDashboardState extends State<DebugDashboard> {
 
   Widget _buildMetricCard(
       String title, String value, String unit, IconData icon, Color color) {
-    return Container(
-      padding: EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.grey[850],
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-              color: Colors.black26, blurRadius: 10, offset: Offset(0, 4)),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(icon, color: color, size: 28),
-          SizedBox(height: 12),
-          Text(title, style: TextStyle(color: Colors.grey, fontSize: 12)),
-          SizedBox(height: 4),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.baseline,
-            textBaseline: TextBaseline.alphabetic,
-            children: [
-              Text(value,
-                  style: TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white)),
-              SizedBox(width: 4),
-              Text(unit, style: TextStyle(fontSize: 12, color: Colors.grey)),
+    return GestureDetector(
+      onTap: () {
+        // Show explanation based on title
+        String explanation = "Real-time sensor reading.";
+        if (title.contains("Pressure")) {
+          explanation =
+              "Atmospheric pressure helps in calculating altitude and predicting local weather system changes.";
+        } else if (title.contains("Noise")) {
+          explanation =
+              "Ambient noise level monitoring contributes to urban noise pollution mapping.";
+        }
+
+        showDialog(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            backgroundColor: Colors.grey[900],
+            title: Row(children: [
+              Icon(icon, color: color),
+              SizedBox(width: 10),
+              Text(title, style: TextStyle(color: Colors.white))
+            ]),
+            content: Text(explanation, style: TextStyle(color: Colors.white70)),
+            actions: [
+              TextButton(
+                  onPressed: () => Navigator.pop(ctx),
+                  child: Text("OK", style: TextStyle(color: Colors.cyanAccent)))
             ],
           ),
-        ],
+        );
+      },
+      child: Container(
+        padding: EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.grey[850],
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+                color: Colors.black26, blurRadius: 10, offset: Offset(0, 4)),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(icon, color: color, size: 28),
+            SizedBox(height: 12),
+            Text(title, style: TextStyle(color: Colors.grey, fontSize: 12)),
+            SizedBox(height: 4),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.baseline,
+              textBaseline: TextBaseline.alphabetic,
+              children: [
+                Flexible(
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text(value,
+                        style: TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white)),
+                  ),
+                ),
+                SizedBox(width: 4),
+                Text(unit, style: TextStyle(fontSize: 12, color: Colors.grey)),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -492,6 +767,62 @@ class _DebugDashboardState extends State<DebugDashboard> {
   }
 
   Widget _buildInputSection(SensorManager manager) {
+    bool isActivated =
+        manager.inviterId != null && manager.inviterId!.isNotEmpty;
+
+    if (isActivated) {
+      return Container(
+        width: double.infinity,
+        padding: EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+        decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(20),
+            gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [Color(0xFFFFD700), Color(0xFFB8860B)]),
+            boxShadow: [
+              BoxShadow(
+                  color: Colors.amber.withOpacity(0.4),
+                  blurRadius: 15,
+                  spreadRadius: 2)
+            ]),
+        child: Column(
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.stars, color: Colors.white, size: 28),
+                SizedBox(width: 12),
+                Text("BOOST ACTIVE",
+                    style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w900,
+                        color: Colors.white,
+                        letterSpacing: 2.0)),
+              ],
+            ),
+            SizedBox(height: 8),
+            Text(
+              "Referred by: ${manager.inviterId}",
+              style: TextStyle(
+                  color: Colors.white.withOpacity(0.9),
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold),
+            ),
+            SizedBox(height: 12),
+            Container(
+              padding: EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+              decoration: BoxDecoration(
+                  color: Colors.black26,
+                  borderRadius: BorderRadius.circular(20)),
+              child: Text("+20% Mining Efficiency",
+                  style: TextStyle(color: Colors.white, fontSize: 10)),
+            )
+          ],
+        ),
+      );
+    }
+
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
@@ -519,9 +850,13 @@ class _DebugDashboardState extends State<DebugDashboard> {
           SizedBox(width: 8),
           IconButton(
             icon: Icon(Icons.check_circle, color: Colors.greenAccent, size: 32),
-            onPressed: () {
+            onPressed: () async {
               if (_tempInviteCode != null && _tempInviteCode!.length == 6) {
                 manager.inviterId = _tempInviteCode;
+                // Simple persistence hack for this session
+                final prefs = await SharedPreferences.getInstance();
+                await prefs.setString('inviter_code', _tempInviteCode!);
+
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
                       content:
