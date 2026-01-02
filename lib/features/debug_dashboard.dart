@@ -4,12 +4,10 @@ import 'package:uuid/uuid.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:latlong2/latlong.dart';
-import 'package:flutter_map/flutter_map.dart'; // Needed for Mini Map
 
 import '../core/sensor_manager.dart';
 import 'hex_map_page.dart';
-import 'onboarding_page.dart'; // Import for settings navigation
+import 'onboarding_page.dart';
 
 class DebugDashboard extends StatefulWidget {
   @override
@@ -19,28 +17,11 @@ class DebugDashboard extends StatefulWidget {
 class _DebugDashboardState extends State<DebugDashboard> {
   String? _tempInviteCode;
   String? deviceId;
-  LatLng? _previewLocation; // For MiniMap
 
   @override
   void initState() {
     super.initState();
     _initDeviceId();
-    _initLocationPreview();
-  }
-
-  Future<void> _initLocationPreview() async {
-    try {
-      // Just a rough check, don't block
-      Position pos =
-          await Geolocator.getCurrentPosition(timeLimit: Duration(seconds: 2));
-      if (mounted) {
-        setState(() {
-          _previewLocation = LatLng(pos.latitude, pos.longitude);
-        });
-      }
-    } catch (_) {
-      // If fails (e.g. no permission), just ignore. Map will show loading or default.
-    }
   }
 
   Future<void> _initDeviceId() async {
@@ -58,7 +39,6 @@ class _DebugDashboardState extends State<DebugDashboard> {
         deviceId = storedId;
       });
 
-      // Update manager if we have a stored inviter code
       if (storedInviter != null) {
         final manager = Provider.of<SensorManager>(context, listen: false);
         manager.inviterId = storedInviter;
@@ -171,67 +151,50 @@ class _DebugDashboardState extends State<DebugDashboard> {
           )
         ],
       ),
-      body: Consumer<SensorManager>(
-        builder: (context, manager, child) {
-          return SingleChildScrollView(
-            child: Padding(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  // 1. Mining Status & Earnings
-                  _buildMiningMainCard(manager),
-
-                  SizedBox(height: 16),
-
-                  // 2. Network Stats (Placeholder/Mock for momentum)
-                  _buildNetworkStats(),
-
-                  SizedBox(height: 24),
-
-                  // 3. Data Metrics
-                  Row(
-                    children: [
-                      Expanded(
-                          child: _buildMetricCard(
-                              'Pressure',
-                              '${manager.pressure.toStringAsFixed(2)}',
-                              'hPa',
-                              Icons.speed,
-                              Colors.cyan)),
-                      SizedBox(width: 12),
-                      Expanded(
-                          child: _buildMetricCard(
-                              'Noise Level',
-                              '${manager.decibel.toStringAsFixed(1)}',
-                              'dB',
-                              Icons.mic,
-                              Colors.pinkAccent)),
-                    ],
+      body: ListView(
+        padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 20),
+        children: [
+          Consumer<SensorManager>(
+            builder: (context, manager, _) => _buildMiningMainCard(manager),
+          ),
+          SizedBox(height: 16),
+          _buildNetworkStats(),
+          SizedBox(height: 24),
+          Consumer<SensorManager>(
+            builder: (context, manager, _) => Row(
+              children: [
+                Expanded(
+                  child: _buildMetricCard(
+                    'Pressure',
+                    '${manager.pressure.toStringAsFixed(2)}',
+                    'hPa',
+                    Icons.speed,
+                    Colors.cyan,
                   ),
-
-                  SizedBox(height: 24),
-
-                  // 3. Mini Map Preview (Interactive Entry)
-                  _buildMiniMapCard(context),
-
-                  SizedBox(height: 24),
-
-                  // 4. Premium Referral Section
-                  _buildReferralSection(),
-
-                  SizedBox(height: 24),
-
-                  // 5. Invite Code Input
-                  _buildInputSection(manager),
-
-                  SizedBox(height: 40),
-                ],
-              ),
+                ),
+                SizedBox(width: 12),
+                Expanded(
+                  child: _buildMetricCard(
+                    'Noise Level',
+                    '${manager.decibel.toStringAsFixed(1)}',
+                    'dB',
+                    Icons.graphic_eq,
+                    Colors.purpleAccent,
+                  ),
+                ),
+              ],
             ),
-          );
-        },
+          ),
+          SizedBox(height: 24),
+          _buildMiniMapCard(context),
+          SizedBox(height: 24),
+          _buildReferralSection(),
+          SizedBox(height: 24),
+          Consumer<SensorManager>(
+            builder: (context, manager, _) => _buildInputSection(manager),
+          ),
+          SizedBox(height: 80),
+        ],
       ),
     );
   }
@@ -239,115 +202,64 @@ class _DebugDashboardState extends State<DebugDashboard> {
   // --- WIDGETS ---
 
   Widget _buildMiniMapCard(BuildContext context) {
-    return Container(
-      height: 200,
-      decoration: BoxDecoration(
-        color: Colors.grey[850],
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.white10),
-        boxShadow: [
-          BoxShadow(
-              color: Colors.black26, blurRadius: 10, offset: Offset(0, 4)),
-        ],
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: Stack(
-        children: [
-          // Background Map (Static-ish)
-          if (_previewLocation != null)
-            IgnorePointer(
-              ignoring: true, // Make map strictly visual so tap goes to InkWell
-              child: FlutterMap(
-                options: MapOptions(
-                  initialCenter: _previewLocation!,
-                  initialZoom: 13.0,
-                  interactionOptions: InteractionOptions(
-                      flags: InteractiveFlag.none), // Disable pan/zoom
-                ),
+    return GestureDetector(
+      onTap: () => Navigator.push(
+          context, MaterialPageRoute(builder: (_) => HexMapPage())),
+      child: Container(
+        height: 180,
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [Color(0xFF2C5364), Color(0xFF203A43)],
+          ),
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+                color: Colors.black26, blurRadius: 10, offset: Offset(0, 4)),
+          ],
+        ),
+        child: Padding(
+          padding: EdgeInsets.all(24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
                 children: [
-                  // Use OSM for mini map too
-                  TileLayer(
-                    urlTemplate:
-                        'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                    userAgentPackageName: 'com.example.sensor_sentinel',
+                  Icon(Icons.map_outlined, color: Colors.cyanAccent, size: 32),
+                  SizedBox(width: 12),
+                  Text("Coverage Map",
+                      style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 18)),
+                ],
+              ),
+              Text(
+                "Explore high-yield hexagons\nand optimize your mining routes",
+                style: TextStyle(
+                  color: Colors.white70,
+                  fontSize: 14,
+                  height: 1.5,
+                ),
+              ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Chip(
+                    label: Text("Interactive"),
+                    backgroundColor: Colors.greenAccent.withOpacity(0.2),
+                    labelStyle:
+                        TextStyle(color: Colors.greenAccent, fontSize: 11),
                   ),
-                  CircleLayer(circles: [
-                    CircleMarker(
-                        point: _previewLocation!,
-                        radius: 80,
-                        useRadiusInMeter: true,
-                        color: Colors.green.withOpacity(0.3),
-                        borderColor: Colors.green,
-                        borderStrokeWidth: 2),
-                  ])
+                  Icon(Icons.arrow_forward_ios,
+                      color: Colors.white70, size: 16),
                 ],
               ),
-            )
-          else
-            Container(
-              color: Colors.grey[800],
-              child: Center(
-                  child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.location_searching,
-                      color: Colors.white24, size: 40),
-                  SizedBox(height: 10),
-                  Text("Locating...", style: TextStyle(color: Colors.white30))
-                ],
-              )),
-            ),
-
-          // Overlay Gradient
-          Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [Colors.transparent, Colors.black.withOpacity(0.8)],
-                stops: [0.5, 1.0],
-              ),
-            ),
+            ],
           ),
-
-          // Text & Button Overlay
-          Positioned(
-            bottom: 15,
-            left: 15,
-            right: 15,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text("Global Coverage",
-                        style: TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 14)),
-                    SizedBox(height: 2),
-                    Text("Explore High Yield Areas",
-                        style:
-                            TextStyle(color: Colors.greenAccent, fontSize: 10)),
-                  ],
-                ),
-                Icon(Icons.arrow_forward_ios, color: Colors.white70, size: 16),
-              ],
-            ),
-          ),
-
-          // Tap Handler
-          Positioned.fill(
-            child: Material(
-              color: Colors.transparent,
-              child: InkWell(
-                onTap: () => Navigator.push(
-                    context, MaterialPageRoute(builder: (_) => HexMapPage())),
-              ),
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -413,64 +325,64 @@ class _DebugDashboardState extends State<DebugDashboard> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('ESTIMATED EARNINGS',
-                      style: TextStyle(
-                          color: Colors.grey,
-                          fontSize: 10,
-                          letterSpacing: 1.5)),
-                  SizedBox(height: 8),
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.baseline,
-                    textBaseline: TextBaseline.alphabetic,
-                    children: [
-                      Flexible(
-                        child: FittedBox(
-                          fit: BoxFit.scaleDown,
+              Expanded(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('ESTIMATED EARNINGS',
+                        style: TextStyle(
+                            color: Colors.grey,
+                            fontSize: 10,
+                            letterSpacing: 1.5)),
+                    SizedBox(height: 8),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        // SAFE FIX: Removed Flexible/FittedBox complex constraints
+                        Flexible(
                           child: Text(
                             manager.totalEarnings.toStringAsFixed(2),
                             style: TextStyle(
-                                fontSize: 48,
+                                fontSize: 40,
                                 fontWeight: FontWeight.bold,
                                 color: Colors.white,
                                 fontFamily: 'monospace'),
                           ),
                         ),
-                      ),
-                      SizedBox(width: 8),
-                      Text('QBIT',
-                          style: TextStyle(
-                              fontSize: 14,
-                              color: Colors.greenAccent,
-                              fontWeight: FontWeight.bold)),
-                      SizedBox(width: 4),
-                      GestureDetector(
-                        onTap: () {
-                          showDialog(
-                            context: context,
-                            builder: (ctx) => AlertDialog(
-                              title: Text("About QBIT Rewards"),
-                              content: Text(
-                                  "QBIT is the native reward token of the DiSensor network.\n\n"
-                                  "You earn QBIT by contributing valid sensor data (Pressure, Noise, Location). "
-                                  "Future value will be determined by network usage and data demand.\n\n"
-                                  "Mining Rate: Base + Movement Bonus."),
-                              actions: [
-                                TextButton(
-                                    onPressed: () => Navigator.pop(ctx),
-                                    child: Text("GOT IT"))
-                              ],
-                            ),
-                          );
-                        },
-                        child: Icon(Icons.info_outline,
-                            color: Colors.white24, size: 16),
-                      )
-                    ],
-                  ),
-                ],
+                        SizedBox(width: 8),
+                        Text('QBIT',
+                            style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.greenAccent,
+                                fontWeight: FontWeight.bold)),
+                        SizedBox(width: 4),
+                        GestureDetector(
+                          onTap: () {
+                            showDialog(
+                              context: context,
+                              builder: (ctx) => AlertDialog(
+                                title: Text("About QBIT Rewards"),
+                                content: Text(
+                                    "QBIT is the native reward token of the DiSensor network.\n\n"
+                                    "You earn QBIT by contributing valid sensor data (Pressure, Noise, Location). "
+                                    "Future value will be determined by network usage and data demand.\n\n"
+                                    "Mining Rate: Base + Movement Bonus."),
+                                actions: [
+                                  TextButton(
+                                      onPressed: () => Navigator.pop(ctx),
+                                      child: Text("GOT IT"))
+                                ],
+                              ),
+                            );
+                          },
+                          child: Icon(Icons.info_outline,
+                              color: Colors.white24, size: 16),
+                        )
+                      ],
+                    ),
+                  ],
+                ),
               ),
               Column(
                 children: [
@@ -504,16 +416,11 @@ class _DebugDashboardState extends State<DebugDashboard> {
                   if (manager.isSampling) {
                     manager.stopSampling();
                   } else {
-                    // Show loading indicator
                     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                       content: Row(
                         children: [
-                          SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(
-                                  strokeWidth: 2, color: Colors.white)),
-                          SizedBox(width: 16),
+                          Icon(Icons.sync, color: Colors.white, size: 16),
+                          SizedBox(width: 12),
                           Text('Checking permissions...'),
                         ],
                       ),
@@ -524,7 +431,6 @@ class _DebugDashboardState extends State<DebugDashboard> {
                     bool granted = await manager.requestPermissions();
 
                     if (granted) {
-                      // Permissions granted, start immediately
                       await manager.startRealSampling(
                           deviceId: deviceId ?? "DEVICE-1");
 
@@ -534,7 +440,6 @@ class _DebugDashboardState extends State<DebugDashboard> {
                         duration: Duration(seconds: 2),
                       ));
                     } else {
-                      // Check what went wrong
                       bool serviceEnabled =
                           await Geolocator.isLocationServiceEnabled();
                       LocationPermission perm =
@@ -594,7 +499,6 @@ class _DebugDashboardState extends State<DebugDashboard> {
       String title, String value, String unit, IconData icon, Color color) {
     return GestureDetector(
       onTap: () {
-        // Show explanation based on title
         String explanation = "Real-time sensor reading.";
         if (title.contains("Pressure")) {
           explanation =
@@ -633,6 +537,7 @@ class _DebugDashboardState extends State<DebugDashboard> {
           ],
         ),
         child: Column(
+          mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Icon(icon, color: color, size: 28),
@@ -640,19 +545,14 @@ class _DebugDashboardState extends State<DebugDashboard> {
             Text(title, style: TextStyle(color: Colors.grey, fontSize: 12)),
             SizedBox(height: 4),
             Row(
-              crossAxisAlignment: CrossAxisAlignment.baseline,
-              textBaseline: TextBaseline.alphabetic,
+              crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                Flexible(
-                  child: FittedBox(
-                    fit: BoxFit.scaleDown,
-                    child: Text(value,
-                        style: TextStyle(
-                            fontSize: 22,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white)),
-                  ),
-                ),
+                // SAFE FIX: Removed Flexible/FittedBox
+                Text(value,
+                    style: TextStyle(
+                        fontSize: 20, // Slightly reduced
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white)),
                 SizedBox(width: 4),
                 Text(unit, style: TextStyle(fontSize: 12, color: Colors.grey)),
               ],
@@ -693,7 +593,6 @@ class _DebugDashboardState extends State<DebugDashboard> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    // --- FIX: Wrapped in Expanded to prevent overflow ---
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -767,8 +666,7 @@ class _DebugDashboardState extends State<DebugDashboard> {
   }
 
   Widget _buildInputSection(SensorManager manager) {
-    bool isActivated =
-        manager.inviterId != null && manager.inviterId!.isNotEmpty;
+    bool isActivated = (manager.inviterId ?? '').isNotEmpty;
 
     if (isActivated) {
       return Container(
@@ -851,11 +749,12 @@ class _DebugDashboardState extends State<DebugDashboard> {
           IconButton(
             icon: Icon(Icons.check_circle, color: Colors.greenAccent, size: 32),
             onPressed: () async {
-              if (_tempInviteCode != null && _tempInviteCode!.length == 6) {
-                manager.inviterId = _tempInviteCode;
+              final code = _tempInviteCode;
+              if (code != null && code.length == 6) {
+                manager.inviterId = code;
                 // Simple persistence hack for this session
                 final prefs = await SharedPreferences.getInstance();
-                await prefs.setString('inviter_code', _tempInviteCode!);
+                await prefs.setString('inviter_code', code);
 
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(

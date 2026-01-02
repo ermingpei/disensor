@@ -9,11 +9,12 @@ import 'kalman_filter.dart';
 import 'privacy_guard.dart';
 import 'data_sync_service.dart';
 
-// import 'package:h3_flutter/h3_flutter.dart';
+import 'package:sensors_plus/sensors_plus.dart';
+import 'package:noise_meter/noise_meter.dart';
 
 class SensorManager extends ChangeNotifier {
   final KalmanFilter _pressureFilter = KalmanFilter(q: 0.01, r: 0.1);
-  // final H3 _h3 = const H3(); // Initialize H3
+  NoiseMeter? _noiseMeter;
 
   double _currentPressure = 0.0;
   double _currentDecibel = 0.0;
@@ -31,6 +32,14 @@ class SensorManager extends ChangeNotifier {
     notifyListeners();
   }
 
+  double _totalEarnings = 0.0;
+  double _miningRate = 1.0; // Base QBIT per valid data upload
+  final Set<String> _visitedHexes = {}; // Tracks coverage in current session
+
+  double get totalEarnings => _totalEarnings;
+  double get miningRate => _miningRate;
+  int get uniqueHexCount => _visitedHexes.length;
+
   double get pressure => _currentPressure;
   double get decibel => _currentDecibel;
   bool get isSampling => _isSampling;
@@ -44,108 +53,135 @@ class SensorManager extends ChangeNotifier {
 
   Future<bool> requestPermissions() async {
     try {
-      // iOS 需要明确请求 Always 权限以支持后台运行
-      LocationPermission permission = await Geolocator.checkPermission();
-      if (permission == LocationPermission.denied) {
-        permission = await Geolocator.requestPermission();
+      // 1. Check if location services are enabled
+      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      debugPrint("🔍 Location Service Enabled: $serviceEnabled");
+      if (!serviceEnabled) {
+        debugPrint("❌ Location services are disabled.");
+        return false;
       }
 
-      // 如果不是 "Always"，我们需要引导用户去设置里开启（对于后台采集至关重要）
-      // 这里简化流程，只记录状态
-      debugPrint("Current Location Permission: $permission");
+      // 2. Request Location Permission
+      LocationPermission locationStatus = await Geolocator.checkPermission();
+      debugPrint("🔍 Initial Location Permission: $locationStatus");
 
-      return true;
+      if (locationStatus == LocationPermission.denied) {
+        debugPrint("📱 Requesting location permission...");
+        locationStatus = await Geolocator.requestPermission();
+        debugPrint("🔍 After Request Location Permission: $locationStatus");
+      }
+
+      if (locationStatus == LocationPermission.denied ||
+          locationStatus == LocationPermission.deniedForever) {
+        debugPrint("❌ Location permission denied: $locationStatus");
+        return false;
+      }
+
+      // 3. Request Microphone (for Noise Meter)
+      PermissionStatus micStatus = await Permission.microphone.status;
+      debugPrint("🔍 Initial Microphone Permission: $micStatus");
+
+      if (!micStatus.isGranted) {
+        debugPrint("📱 Requesting microphone permission...");
+        micStatus = await Permission.microphone.request();
+        debugPrint("🔍 After Request Microphone Permission: $micStatus");
+      }
+
+      debugPrint(
+          "✅ Final Permissions: Location($locationStatus), Mic($micStatus)");
+
+      // Return true if location is granted (whileInUse or always)
+      // Microphone is optional - we can still mine without it
+      bool locationOK = (locationStatus == LocationPermission.whileInUse ||
+          locationStatus == LocationPermission.always);
+      bool micOK = micStatus.isGranted;
+
+      debugPrint("🎯 Permission Check: Location=$locationOK, Mic=$micOK");
+
+      // Only require location for now, mic is optional
+      return locationOK;
     } catch (e) {
-      debugPrint("Permission request error: $e");
+      debugPrint("❌ Permission request error: $e");
       return false;
     }
   }
 
   Future<void> startRealSampling({required String deviceId}) async {
+    debugPrint("🚀 Starting Real Sampling for device: $deviceId");
     _isSampling = true;
     notifyListeners();
 
-    // 配置后台定位参数 - Optimized for indoor
+    // 1. Barometer (Pressure) using sensors_plus
+    debugPrint("📊 Initializing Barometer...");
+    try {
+      _pressureSub = barometerEventStream().listen((BarometerEvent event) {
+        if (_currentPressure == 0.0) {
+          debugPrint("🌡️ First Barometer Reading: ${event.pressure} hPa");
+        }
+        _currentPressure = _pressureFilter.update(event.pressure);
+        notifyListeners();
+      }, onError: (e) {
+        debugPrint("❌ Barometer stream error: $e");
+        // Start mock data on error
+        _startMockPressure();
+      }, cancelOnError: false);
+
+      debugPrint("✅ Barometer stream started successfully");
+    } catch (e) {
+      debugPrint("❌ Failed to start barometer: $e");
+      _startMockPressure();
+    }
+
+    // 2. Noise Meter (Decibel)
+    debugPrint("🎤 Initializing Noise Meter...");
+    try {
+      _noiseMeter ??= NoiseMeter();
+      _noiseSub = _noiseMeter?.noise.listen((NoiseReading reading) {
+        _currentDecibel = reading.meanDecibel;
+        notifyListeners();
+      }, onError: (e) => debugPrint("❌ Noise stream error: $e"));
+      debugPrint("✅ Noise meter started");
+    } catch (e) {
+      debugPrint(
+          "⚠️ Noise meter unavailable: $e (Will proceed without audio data)");
+    }
+
+    // 3. Location & Upload Flow
     final LocationSettings locationSettings = Platform.isIOS
         ? AppleSettings(
-            accuracy: LocationAccuracy.best, // Best available (WiFi/Cell/GPS)
-            activityType: ActivityType.fitness,
-            distanceFilter: 0, // Fire on ANY movement
+            accuracy: LocationAccuracy.best,
+            activityType: ActivityType.other,
+            distanceFilter: 0,
             pauseLocationUpdatesAutomatically: false,
-            showBackgroundLocationIndicator: true, // 状态栏蓝条，保活的关键
+            showBackgroundLocationIndicator: true,
           )
         : AndroidSettings(
             accuracy: LocationAccuracy.best,
-            distanceFilter: 0, // Fire on ANY movement
-            forceLocationManager: false, // Use Fused (better for indoor)
+            distanceFilter: 0,
             intervalDuration: const Duration(seconds: 2),
           );
 
-    // 1. Position Stream (Map Updates)
-    // This drives the "Pin" movement on the map seamlessly
-    try {
-      _positionSub =
-          Geolocator.getPositionStream(locationSettings: locationSettings)
-              .listen((Position position) {
-        debugPrint(
-            "📍 Location Stream Update: ${position.latitude}, ${position.longitude} (±${position.accuracy.toStringAsFixed(1)}m)");
+    _positionSub =
+        Geolocator.getPositionStream(locationSettings: locationSettings)
+            .listen((Position position) {
+      _liveLocation = LatLng(position.latitude, position.longitude);
+      notifyListeners();
+      _checkUploadRule(position, deviceId);
+    });
 
-        // Update UI
-        _liveLocation = LatLng(position.latitude, position.longitude);
-        notifyListeners();
-
-        // Check if we should upload this point
-        _checkUploadRule(position, deviceId);
-      }, onError: (e) {
-        debugPrint("⚠️ Location stream error: $e");
-      });
-    } catch (e) {
-      debugPrint("Failed to start location stream: $e");
-    }
-
-    // 1.5. Fallback: Poll location every 3 seconds (for weak GPS/indoor)
-    _locationPollTimer = Timer.periodic(Duration(seconds: 3), (timer) async {
-      if (!_isSampling) {
-        timer.cancel();
-        return;
-      }
-
+    // Heartbeat Poll
+    _locationPollTimer =
+        Timer.periodic(const Duration(seconds: 5), (timer) async {
+      if (!_isSampling) return;
       try {
         Position pos = await Geolocator.getCurrentPosition(
-          desiredAccuracy: LocationAccuracy.best,
-          timeLimit: Duration(seconds: 2),
-        );
-
-        // Update UI even if no significant movement (helps verify it's working)
-        double distFromLast = _liveLocation != null
-            ? Geolocator.distanceBetween(_liveLocation!.latitude,
-                _liveLocation!.longitude, pos.latitude, pos.longitude)
-            : 999;
-
-        if (_liveLocation == null || distFromLast > 0.5) {
-          debugPrint(
-              "🔄 Poll Update: ${pos.latitude}, ${pos.longitude} (moved ${distFromLast.toStringAsFixed(1)}m)");
-          _liveLocation = LatLng(pos.latitude, pos.longitude);
-          notifyListeners();
-        }
+            desiredAccuracy: LocationAccuracy.best);
+        _liveLocation = LatLng(pos.latitude, pos.longitude);
+        notifyListeners();
+        _checkUploadRule(pos, deviceId);
       } catch (e) {
-        debugPrint("ℹ️ Poll skipped: $e");
+        debugPrint("Hearthbeat poll skipped: $e");
       }
-    });
-
-    // 2. Sensors (Mock for now, but independent of upload trigger)
-    _pressureSub = Stream.periodic(
-            const Duration(seconds: 2), (i) => 1013.25 + (i % 5) * 0.1)
-        .listen((val) {
-      _currentPressure = _pressureFilter.update(val);
-      notifyListeners();
-    });
-
-    _noiseSub = Stream.periodic(
-            const Duration(seconds: 2), (i) => 35.0 + (i % 10).toDouble())
-        .listen((val) {
-      _currentDecibel = val;
-      notifyListeners();
     });
   }
 
@@ -241,13 +277,22 @@ class SensorManager extends ChangeNotifier {
         referredBy: _inviterId,
       );
 
-      // 更新状态
+      // --- Reward Logic ---
+      _totalEarnings += _miningRate; // Base Contribution reward
+
+      final distDiff = (_lastLat != null && _lastLng != null)
+          ? Geolocator.distanceBetween(_lastLat!, _lastLng!, lat, lng)
+          : 0.0;
+      if (distDiff > 10) _totalEarnings += 0.5; // Hex/Coverage bonus simulation
+
       _lastUploadTime = now;
       _lastLat = lat;
       _lastLng = lng;
       _lastNoise = _currentDecibel;
+
+      notifyListeners();
     } catch (e) {
-      debugPrint("Data sync pulse skipped: $e");
+      debugPrint("Upload process failed: $e");
     }
   }
 
@@ -258,5 +303,15 @@ class SensorManager extends ChangeNotifier {
     _positionSub?.cancel();
     _locationPollTimer?.cancel();
     notifyListeners();
+  }
+
+  void _startMockPressure() {
+    debugPrint("🔄 Starting mock pressure data");
+    _pressureSub = Stream.periodic(
+            const Duration(seconds: 5), (i) => 1013.25 + (i % 3) * 0.05)
+        .listen((val) {
+      _currentPressure = _pressureFilter.update(val);
+      notifyListeners();
+    });
   }
 }

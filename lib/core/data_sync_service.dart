@@ -24,7 +24,7 @@ class DataSyncService {
     final timestamp = DateTime.now().toUtc();
     final anonymizedId = _privacyGuard.anonymizeNodeId(deviceId);
     final perturbedLoc = _privacyGuard.perturbLocation(lat, lng);
-    
+
     // 生成数据摘要以供云端验证一致性
     final digest = _privacyGuard.generateDigest(
       pressure: pressure,
@@ -35,7 +35,6 @@ class DataSyncService {
     );
 
     // 1. 确保节点已注册 (Upsert)
-    // 如果提供了推荐码，则将其记录到节点表中
     Map<String, dynamic> nodeData = {
       'anonymized_id': anonymizedId,
       'device_model': 'Mobile-PoC',
@@ -47,7 +46,6 @@ class DataSyncService {
     await _client.from('nodes').upsert(nodeData, onConflict: 'anonymized_id');
 
     // 2. 插入读数
-    // 注意：location 使用 PostGIS 的 Point(lng lat) 格式
     await _client.from('readings').insert({
       'node_id': anonymizedId,
       'pressure_hpa': pressure,

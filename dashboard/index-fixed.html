@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>DiSensor - Environment Test</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            padding: 20px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        #map {
+            height: 400px;
+            margin: 20px 0;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+        }
+
+        .test-item {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            background: #f0f0f0;
+        }
+
+        .pass {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .fail {
+            background: #f8d7da;
+            color: #721c24;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>🧪 DiSensor Environment Test</h1>
+
+    <div id="test-results">
+        <div class="test-item" id="test-js">❓ JavaScript Loading...</div>
+        <div class="test-item" id="test-leaflet">❓ Leaflet Loading...</div>
+        <div class="test-item" id="test-supabase">❓ Supabase SDK Loading...</div>
+        <div class="test-item" id="test-map">❓ Map Rendering...</div>
+    </div>
+
+    <div id="map"></div>
+
+    <h3>Console Output:</h3>
+    <pre id="console-output"
+        style="background: #333; color: #0f0; padding: 10px; border-radius: 4px; max-height: 200px; overflow-y: auto;"></pre>
+
+    <script>
+        const output = document.getElementById('console-output');
+        const log = (msg) => {
+            console.log(msg);
+            output.textContent += msg + '\n';
+        };
+
+        // Test 1: JavaScript
+        document.getElementById('test-js').className = 'test-item pass';
+        document.getElementById('test-js').textContent = '✅ JavaScript is working';
+        log('✅ JavaScript executing');
+    </script>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <script>
+        // Test 2: Leaflet
+        if (typeof L !== 'undefined') {
+            document.getElementById('test-leaflet').className = 'test-item pass';
+            document.getElementById('test-leaflet').textContent = '✅ Leaflet loaded (version: ' + L.version + ')';
+            log('✅ Leaflet library loaded');
+        } else {
+            document.getElementById('test-leaflet').className = 'test-item fail';
+            document.getElementById('test-leaflet').textContent = '❌ Leaflet failed to load';
+            log('❌ Leaflet not found');
+        }
+
+        // Test 3: Supabase
+        if (typeof window.supabase !== 'undefined') {
+            document.getElementById('test-supabase').className = 'test-item pass';
+            document.getElementById('test-supabase').textContent = '✅ Supabase SDK loaded';
+            log('✅ Supabase SDK available');
+        } else {
+            document.getElementById('test-supabase').className = 'test-item fail';
+            document.getElementById('test-supabase').textContent = '❌ Supabase SDK failed to load';
+            log('❌ Supabase SDK not found');
+        }
+
+        // Test 4: Map Rendering
+        try {
+            const map = L.map('map').setView([53.5461, -113.4938], 11);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors'
+            }).addTo(map);
+
+            // Add 6 Edmonton markers
+            const locations = [
+                [53.5461, -113.4938, "Downtown"],
+                [53.5232, -113.5263, "University"],
+                [53.5225, -113.6257, "West End"],
+                [53.5710, -113.4912, "Northside"],
+                [53.4665, -113.4925, "Southside"],
+                [53.3900, -113.4685, "Millwoods"]
+            ];
+
+            locations.forEach(([lat, lng, name]) => {
+                L.circleMarker([lat, lng], {
+                    radius: 8,
+                    fillColor: '#667eea',
+                    color: 'white',
+                    weight: 2,
+                    fillOpacity: 0.8
+                }).addTo(map).bindPopup(`<b>${name}</b><br>Sensor Location`);
+            });
+
+            document.getElementById('test-map').className = 'test-item pass';
+            document.getElementById('test-map').textContent = '✅ Map rendered with 6 markers';
+            log('✅ Map initialized with Edmonton markers');
+
+            // Test Supabase connection
+            const SUPABASE_URL = 'https://alczyftlhcdsifjntcbh.supabase.co';
+            const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFsY3p5ZnRsaGNkc2lmam50Y2JoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY5NzE1MTAsImV4cCI6MjA4MjU0NzUxMH0.839c_boZy57LB-gBXuJjevubC2VVYmvNkQdTg1uB-y0';
+
+            const client = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+            client.from('readings').select('*', { count: 'exact', head: true }).then(({ count, error }) => {
+                if (error) {
+                    log('⚠️ Supabase query failed: ' + error.message);
+                    log('   (This is OK - will use mock data)');
+                } else {
+                    log('✅ Supabase connected! Total readings: ' + count);
+                }
+            });
+
+        } catch (error) {
+            document.getElementById('test-map').className = 'test-item fail';
+            document.getElementById('test-map').textContent = '❌ Map rendering failed: ' + error.message;
+            log('❌ Map error: ' + error.message);
+        }
+
+        // Summary
+        setTimeout(() => {
+            log('\n========== TEST COMPLETE ==========');
+            log('If all tests pass but main page still fails:');
+            log('1. Clear browser cache (⌘+Shift+R)');
+            log('2. Check browser console on main page');
+            log('3. Try incognito/private mode');
+        }, 2000);
+    </script>
+</body>
+
+</html>

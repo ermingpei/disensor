@@ -108,39 +108,37 @@ class _OnboardingPageState extends State<OnboardingPage> {
                     },
                     itemCount: _pages.length,
                     itemBuilder: (context, index) {
-                      return SingleChildScrollView(
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 40.0, vertical: 20),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Text(
-                                _pages[index]['icon']!,
-                                style: TextStyle(fontSize: 80),
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 40.0, vertical: 20),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              _pages[index]['icon']!,
+                              style: TextStyle(fontSize: 80),
+                            ),
+                            SizedBox(height: 30),
+                            Text(
+                              _pages[index]['title']!,
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontSize: 24,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
                               ),
-                              SizedBox(height: 30),
-                              Text(
-                                _pages[index]['title']!,
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                  fontSize: 24,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.white,
-                                ),
+                            ),
+                            SizedBox(height: 15),
+                            Text(
+                              _pages[index]['body']!,
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontSize: 16,
+                                height: 1.4,
+                                color: Colors.white70,
                               ),
-                              SizedBox(height: 15),
-                              Text(
-                                _pages[index]['body']!,
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  height: 1.4,
-                                  color: Colors.white70,
-                                ),
-                              ),
-                            ],
-                          ),
+                            ),
+                          ],
                         ),
                       );
                     },

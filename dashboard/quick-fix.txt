@@ -1,0 +1,31 @@
+修复方案：在浏览器控制台直接运行这段代码
+
+1. 访问 http://localhost:3000/index.html
+2. 按 F12 →console
+3. 复制粘贴以下代码并回车：
+
+// 立即初始化
+(function() {
+    const map = L.map('map').setView([53.5461, -113.4938], 11);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+    
+    const demoPoints = [
+        [53.5461, -113.4938], [53.5232, -113.5263], [53.5225, -113.6257],
+        [53.5710, -113.4912], [53.4665, -113.4925], [53.3900, -113.4685]
+    ];
+    
+    demoPoints.forEach(([lat, lng]) => {
+        L.circleMarker([lat, lng], {
+            radius: 8, fillColor: '#667eea', color: 'white',
+            weight: 2, fillOpacity: 0.8
+        }).addTo(map).bindPopup('Active Sensor');
+    });
+    
+    document.getElementById('active-sensors').textContent = '6';
+    document.getElementById('data-points').textContent = '2.4K';
+    document.getElementById('coverage').textContent = '15';
+    
+    console.log('✅ Map manually initialized!');
+})();
+
+这应该立即显示地图和数据！
