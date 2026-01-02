@@ -141,14 +141,51 @@
 
         // Logic
         const params = new URLSearchParams(window.location.search);
-        const refCode = params.get('ref') || 'NO-CODE';
+        const refCode = params.get('ref');
 
-        document.getElementById('codeDisplay').innerText = refCode;
+        const codeDisplay = document.getElementById('codeDisplay');
+        const statusBox = document.getElementById('code-status-box');
+        const codeLabel = document.querySelector('.code-label');
+
+        if (refCode) {
+            codeDisplay.innerText = refCode;
+            // Try Auto-Copy (might fail due to browser policy)
+            attemptCopy(false);
+        } else {
+            codeDisplay.innerText = 'NO-CODE';
+            codeLabel.innerText = 'No Code Detect (Optional)';
+        }
+
+        // --- Core Auto-Copy Logic ---
+        function attemptCopy(showAlert = true) {
+            if (!refCode) return;
+
+            navigator.clipboard.writeText(refCode).then(() => {
+                // SUCCESS UI
+                codeDisplay.style.color = "#00FFFF";
+                codeDisplay.style.textShadow = "0 0 10px #00FFFF";
+                document.querySelector('.code-box').style.borderColor = "#00FF00";
+                document.querySelector('.copy-hint').innerText = "✅ COPIED TO CLIPBOARD";
+                document.querySelector('.copy-hint').style.color = "#00FF00";
+                document.querySelector('.copy-hint').style.fontWeight = "bold";
+
+                if (showAlert) {
+                    // Toast or visual feedback instead of alert to be smoother
+                }
+            }).catch(err => {
+                // Fallback for some browsers
+                console.log('Auto-copy failed', err);
+            });
+        }
+
+        // Smart Copy on ANY interaction (Click Download or Tap Code)
+        // This bypasses browser "user interaction required" policies for clipboard
+        document.body.addEventListener('click', () => {
+            attemptCopy(false);
+        }, { once: true }); // Only need to do it once successfully
 
         function copyCode() {
-            navigator.clipboard.writeText(refCode).then(() => {
-                alert('Code ' + refCode + ' copied! Paste it in the app to get your boost.');
-            });
+            attemptCopy(true);
         }
 
         function detectAndRedirect() {
