@@ -22,11 +22,32 @@ dependencies:
   latlong2: ^0.9.1
   sensors_plus: ^6.1.1
   noise_meter: ^5.1.0
+  flutter_localizations:
+    sdk: flutter
+  intl: ^0.20.2
+  connectivity_plus: ^6.1.0
+  http: ^1.2.0
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   test: ^1.24.0
+  flutter_launcher_icons: ^0.13.1
 
 flutter:
   uses-material-design: true
+  assets:
+    - assets/icon/icon.png
+    - assets/icon/qbit_coin.png
+    - assets/icon/disensor_title.png
+
+flutter_launcher_icons:
+  android: "launcher_icon"
+  ios: true
+  image_path: "assets/icon/icon.png"
+  min_sdk_android: 21 # android min sdk min:16, default 21
+  web:
+    generate: true
+    image_path: "assets/icon/icon.png"
+    background_color: "#121212"
+    theme_color: "#00FFFF"

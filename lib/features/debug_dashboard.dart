@@ -4,6 +4,7 @@ import 'package:uuid/uuid.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:flutter/services.dart'; // For Clipboard
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:sensors_plus/sensors_plus.dart';
@@ -12,13 +13,15 @@ import '../core/sensor_manager.dart';
 import '../core/app_strings.dart';
 import 'hex_map_page.dart';
 import 'onboarding_page.dart';
+import 'widgets/qbit_icon.dart';
 
 class DebugDashboard extends StatefulWidget {
   @override
   _DebugDashboardState createState() => _DebugDashboardState();
 }
 
-class _DebugDashboardState extends State<DebugDashboard> {
+class _DebugDashboardState extends State<DebugDashboard>
+    with WidgetsBindingObserver {
   String? _tempInviteCode;
   String? deviceId;
   bool _isCheckingCode = false;
@@ -27,7 +30,71 @@ class _DebugDashboardState extends State<DebugDashboard> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _initDeviceId();
+
+    // Check clipboard after first frame to ensure we are "foreground" enough for Android 10+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkClipboard();
+    });
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      // User just came back (e.g. from browser copy), check clipboard again
+      _checkClipboard();
+    }
+  }
+
+  /// Separated method to check clipboard for invite codes
+  Future<void> _checkClipboard() async {
+    // 1. If we already have a code applied, don't bother
+    final prefs = await SharedPreferences.getInstance();
+    if (prefs.getString('inviter_code') != null) return;
+
+    // 2. Read Clipboard
+    try {
+      final data = await Clipboard.getData(Clipboard.kTextPlain);
+      final text = data?.text?.trim().toUpperCase();
+
+      // 3. Check for 6-char AlphaNumeric code
+      if (text != null &&
+          text.length == 6 &&
+          RegExp(r'^[A-Z0-9]{6}$').hasMatch(text)) {
+        // Avoid re-alerting if we already detected this specific code in this session
+        if (_tempInviteCode == text) return;
+
+        debugPrint("📋 Detected potential code in clipboard: $text");
+        setState(() {
+          _tempInviteCode = text;
+          _showInput = true;
+        });
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).hideCurrentSnackBar();
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text("📋 Found Code: $text"),
+            duration: Duration(seconds: 5),
+            behavior: SnackBarBehavior.floating,
+            action: SnackBarAction(
+                label: "APPLY NOW",
+                textColor: Colors.amber,
+                onPressed: () {
+                  _verifyAndApplyCode(text);
+                }),
+          ));
+        }
+      }
+    } catch (e) {
+      debugPrint("Clipboard error: $e");
+    }
   }
 
   Future<void> _initDeviceId() async {
@@ -44,7 +111,6 @@ class _DebugDashboardState extends State<DebugDashboard> {
       setState(() {
         deviceId = storedId;
       });
-
       if (storedInviter != null) {
         final manager = Provider.of<SensorManager>(context, listen: false);
         manager.inviterId = storedInviter;
@@ -64,33 +130,48 @@ class _DebugDashboardState extends State<DebugDashboard> {
 
   @override
   Widget build(BuildContext context) {
+    // Cyber-Professional Palette
+    final bgColor = Color(0xFF0B1021); // Deep Midnight
+
     return Scaffold(
-      backgroundColor: Color(0xFF121212),
+      backgroundColor: bgColor,
       appBar: AppBar(
         automaticallyImplyLeading: false,
         title: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Updated Icon - using asset image
-            Image.asset('assets/icon/icon.png', width: 28, height: 28),
+            // Updated Icon - using asset image with Rounded Corners
+            ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: Image.asset('assets/icon/icon.png', width: 28, height: 28),
+            ),
             SizedBox(width: 10),
-            Text(
-              "DiSensor",
-              style: TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.w900,
-                  letterSpacing: 1.0,
-                  color: Colors.white,
-                  shadows: [
-                    Shadow(
-                        blurRadius: 10,
-                        color: Colors.cyanAccent.withOpacity(0.5),
-                        offset: Offset(0, 0))
-                  ]),
+            // Title Image
+            Image.asset(
+              'assets/icon/disensor_title.png',
+              height: 40, // Increased size (approx 1.7x)
+              fit: BoxFit.contain,
+              errorBuilder: (context, error, stackTrace) {
+                return Text(
+                  "DiSensor",
+                  style: TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: 1.0,
+                      color: Colors.white,
+                      shadows: [
+                        Shadow(
+                            blurRadius: 10,
+                            color: Colors.cyanAccent.withOpacity(0.5),
+                            offset: Offset(0, 0))
+                      ]),
+                );
+              },
             ),
           ],
         ),
-        backgroundColor: Colors.black.withOpacity(0.5),
+        backgroundColor:
+            Color(0xFF0F1424).withOpacity(0.9), // Slightly lighter header
         elevation: 0,
         centerTitle: true,
         actions: [
@@ -207,16 +288,22 @@ class _DebugDashboardState extends State<DebugDashboard> {
     return Container(
       padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.03),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.white10),
-      ),
+          color: Color(0xFF151A30), // Solid Navy
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: Colors.white.withOpacity(0.08)),
+          boxShadow: [
+            BoxShadow(
+                color: Colors.black26, blurRadius: 8, offset: Offset(0, 2))
+          ]),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text("DEVICE SENSORS",
               style: TextStyle(
-                  color: Colors.grey, fontSize: 10, letterSpacing: 1.5)),
+                  color: Colors.cyanAccent.withOpacity(0.7),
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 1.2)),
           SizedBox(height: 12),
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
@@ -254,7 +341,7 @@ class _DebugDashboardState extends State<DebugDashboard> {
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-          color: Colors.black45,
+          color: Color(0xFF1F2640),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(color: color.withOpacity(0.3))),
       child: Row(
@@ -265,7 +352,7 @@ class _DebugDashboardState extends State<DebugDashboard> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(label,
-                  style: TextStyle(color: Colors.white70, fontSize: 10)),
+                  style: TextStyle(color: Colors.white60, fontSize: 10)),
               Text(value,
                   style: TextStyle(
                       color: Colors.white,
@@ -288,9 +375,9 @@ class _DebugDashboardState extends State<DebugDashboard> {
           borderRadius: BorderRadius.circular(24),
           boxShadow: [
             BoxShadow(
-                color: Colors.black45, blurRadius: 12, offset: Offset(0, 6)),
+                color: Colors.black38, blurRadius: 15, offset: Offset(0, 8)),
           ],
-          border: Border.all(color: Colors.white10),
+          border: Border.all(color: Colors.white.withOpacity(0.1)),
         ),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(24),
@@ -364,7 +451,7 @@ class _DebugDashboardState extends State<DebugDashboard> {
                 child: Container(
                   padding: EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
-                    color: Colors.black54,
+                    color: Color(0xFF0B1021).withOpacity(0.8),
                     borderRadius: BorderRadius.circular(12),
                     border:
                         Border.all(color: Colors.cyanAccent.withOpacity(0.5)),
@@ -384,17 +471,27 @@ class _DebugDashboardState extends State<DebugDashboard> {
   }
 
   Widget _buildNetworkStats() {
-    return Row(
-      children: [
-        _buildStatBox(AppStrings.t('nodes'), '6', Icons.hub, Colors.blue),
-        SizedBox(width: 10),
-        _buildStatBox(
-            AppStrings.t('uptime'), '99.9%', Icons.timer, Colors.green),
-        SizedBox(width: 10),
-        _buildStatBox(
-            AppStrings.t('latency'), '88ms', Icons.bolt, Colors.orange),
-      ],
-    );
+    return Consumer<SensorManager>(builder: (context, manager, _) {
+      String netType = manager.networkType;
+      String latency = manager.latency > 0 ? '${manager.latency}ms' : '--';
+      Color netColor = netType == 'WiFi' ? Colors.blue : Colors.purpleAccent;
+
+      return Row(
+        children: [
+          _buildStatBox(
+              AppStrings.t('network'),
+              netType,
+              netType == 'WiFi' ? Icons.wifi : Icons.signal_cellular_alt,
+              netColor),
+          SizedBox(width: 10),
+          _buildStatBox(
+              AppStrings.t('latency'), latency, Icons.bolt, Colors.orange),
+          SizedBox(width: 10),
+          _buildStatBox(AppStrings.t('hexes'), '${manager.uniqueHexCount}',
+              Icons.hexagon, Colors.green),
+        ],
+      );
+    });
   }
 
   Widget _buildStatBox(String label, String value, IconData icon, Color color) {
@@ -402,14 +499,15 @@ class _DebugDashboardState extends State<DebugDashboard> {
       child: Container(
         padding: EdgeInsets.symmetric(vertical: 16, horizontal: 12),
         decoration: BoxDecoration(
-            color: Color(0xFF1E1E1E),
+            gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [Color(0xFF151A30), Color(0xFF1F2640)]),
             borderRadius: BorderRadius.circular(16),
             border: Border.all(color: color.withOpacity(0.3)),
             boxShadow: [
               BoxShadow(
-                  color: color.withOpacity(0.1),
-                  blurRadius: 10,
-                  offset: Offset(0, 4))
+                  color: Colors.black26, blurRadius: 4, offset: Offset(0, 2))
             ]),
         child: Column(
           children: [
@@ -435,30 +533,7 @@ class _DebugDashboardState extends State<DebugDashboard> {
 
   // Custom QBit Coin Icon
   Widget _buildQBitCoin() {
-    return Container(
-      width: 40,
-      height: 40,
-      decoration: BoxDecoration(
-        color: Color(0xFFFFD700), // Gold
-        shape: BoxShape.circle,
-        boxShadow: [
-          BoxShadow(
-              color: Colors.amber.withOpacity(0.5),
-              blurRadius: 10,
-              spreadRadius: 2)
-        ],
-        border: Border.all(color: Colors.white, width: 2),
-      ),
-      child: Center(
-          child: Text(
-        "\$",
-        style: TextStyle(
-          color: Color(0xFFB8860B),
-          fontWeight: FontWeight.w900,
-          fontSize: 24,
-        ),
-      )),
-    );
+    return QBitIcon(size: 42);
   }
 
   Widget _buildMiningMainCard(SensorManager manager) {
@@ -466,18 +541,25 @@ class _DebugDashboardState extends State<DebugDashboard> {
     return Container(
       padding: EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: Color(0xFF1A1A1A),
+        gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: isSampling
+                ? [Color(0xFF1A2B2F), Color(0xFF0F1424)] // Slight greenish tint
+                : [Color(0xFF151A30), Color(0xFF1F2640)]),
         borderRadius: BorderRadius.circular(28),
         border: Border.all(
             color: isSampling
                 ? Colors.greenAccent.withOpacity(0.3)
                 : Colors.white10),
         boxShadow: [
+          BoxShadow(
+              color: Colors.black38, blurRadius: 15, offset: Offset(0, 8)),
           if (isSampling)
             BoxShadow(
-                color: Colors.greenAccent.withOpacity(0.05),
+                color: Colors.greenAccent.withOpacity(0.1),
                 blurRadius: 20,
-                spreadRadius: 5),
+                spreadRadius: -5),
         ],
       ),
       child: Column(
@@ -507,8 +589,7 @@ class _DebugDashboardState extends State<DebugDashboard> {
                           child: Text(
                             manager.totalEarnings.toStringAsFixed(2),
                             style: TextStyle(
-                                fontSize:
-                                    32, // Slightly reduced from 40 to avoid overflow
+                                fontSize: 32,
                                 fontWeight: FontWeight.bold,
                                 color: Colors.white,
                                 fontFamily: 'monospace'),
@@ -516,6 +597,8 @@ class _DebugDashboardState extends State<DebugDashboard> {
                         ),
                       ],
                     ),
+                    SizedBox(height: 8),
+                    _buildMultiplierBadge(manager),
                   ],
                 ),
               ),
@@ -635,6 +718,48 @@ class _DebugDashboardState extends State<DebugDashboard> {
     );
   }
 
+  Widget _buildMultiplierBadge(SensorManager manager) {
+    double mult = manager.currentMultiplier;
+    Color color;
+    String text;
+    IconData icon;
+
+    if (mult >= 3.0) {
+      color = Colors.purpleAccent;
+      text = "EVENT BONUS";
+      icon = Icons.bolt;
+    } else if (mult >= 1.0) {
+      color = Colors.greenAccent;
+      text = "ACTIVE";
+      icon = Icons.directions_walk;
+    } else {
+      color = Colors.orangeAccent;
+      text = "IDLE";
+      icon = Icons.snooze;
+    }
+
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.2),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: color.withOpacity(0.5)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 12, color: color),
+          SizedBox(width: 4),
+          Text(
+            "x${mult.toStringAsFixed(1)} $text",
+            style: TextStyle(
+                color: color, fontSize: 10, fontWeight: FontWeight.bold),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildMetricCard(String title, String value, String unit,
       IconData icon, Color color, String desc) {
     return GestureDetector(
@@ -693,6 +818,50 @@ class _DebugDashboardState extends State<DebugDashboard> {
         ),
       ),
     );
+  }
+
+  Future<void> _verifyAndApplyCode(String code) async {
+    if (code.length != 6) return;
+
+    setState(() => _isCheckingCode = true);
+
+    // Simple delay simulation or real check
+    await Future.delayed(Duration(seconds: 1));
+    if (!mounted) return;
+
+    final manager = Provider.of<SensorManager>(context, listen: false);
+
+    // Self-referral check (Basic)
+    if (deviceId != null && deviceId!.startsWith(code)) {
+      setState(() => _isCheckingCode = false);
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text("⚠️ Cannot refer yourself.")));
+      return;
+    }
+
+    final success =
+        await manager.verifyReferralCode(code, deviceId ?? "UNKNOWN");
+
+    if (success) {
+      manager.inviterId = code;
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('inviter_code', code);
+
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(AppStrings.t('invite_activated') ??
+              "Invite Activated! Boost applied. 🚀"),
+          backgroundColor: Colors.green));
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text("❌ Invalid code"), backgroundColor: Colors.redAccent));
+    }
+
+    if (mounted) {
+      setState(() {
+        _isCheckingCode = false;
+        // Optionally keep input shown or hide it
+      });
+    }
   }
 
   Widget _buildReferralSection() {

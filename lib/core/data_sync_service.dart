@@ -20,6 +20,8 @@ class DataSyncService {
     required double lat,
     required double lng,
     String? referredBy,
+    String? networkType,
+    int? latency,
   }) async {
     final timestamp = DateTime.now().toUtc();
     final anonymizedId = _privacyGuard.anonymizeNodeId(deviceId);
@@ -46,13 +48,19 @@ class DataSyncService {
     await _client.from('nodes').upsert(nodeData, onConflict: 'anonymized_id');
 
     // 2. 插入读数
-    await _client.from('readings').insert({
+    final Map<String, dynamic> readingData = {
       'node_id': anonymizedId,
       'pressure_hpa': pressure,
       'decibel_db': decibel,
       'location': 'POINT(${perturbedLoc['lng']} ${perturbedLoc['lat']})',
       'timestamp': timestamp.toIso8601String(),
       'digest': digest,
-    });
+    };
+
+    // Add extra params if available
+    if (networkType != null) readingData['network_type'] = networkType;
+    if (latency != null) readingData['latency_ms'] = latency;
+
+    await _client.from('readings').insert(readingData);
   }
 }

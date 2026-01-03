@@ -11,13 +11,17 @@ import 'data_sync_service.dart';
 
 import 'package:sensors_plus/sensors_plus.dart';
 import 'package:noise_meter/noise_meter.dart';
+import '../features/network_service.dart';
 
 class SensorManager extends ChangeNotifier {
   final KalmanFilter _pressureFilter = KalmanFilter(q: 0.01, r: 0.1);
   NoiseMeter? _noiseMeter;
+  final NetworkService _networkService = NetworkService();
 
   double _currentPressure = 0.0;
   double _currentDecibel = 0.0;
+  String _currentNetworkType = "None";
+  int _currentLatency = -1;
   bool _isSampling = false;
 
   StreamSubscription? _pressureSub;
@@ -32,6 +36,27 @@ class SensorManager extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Verifies if the referral code is valid.
+  /// Currently performs local checks. Should be connected to backend `rpc/verify_code` ideally.
+  Future<bool> verifyReferralCode(String code, String ownDeviceId) async {
+    // 1. Basic format check
+    if (code.length != 6) return false;
+
+    // 2. Self-referral check
+    String ownCode = ownDeviceId.substring(0, 6).toUpperCase();
+    if (code.toUpperCase() == ownCode) {
+      debugPrint("⚠️ Cannot refer yourself");
+      return false;
+    }
+
+    // 3. Simulate Backend Validation (Network delay)
+    await Future.delayed(const Duration(milliseconds: 1500));
+
+    // TODO: Call Supabase: await supabase.rpc('check_referral_code', {'code': code})
+
+    return true; // Assume valid for now if format is correct
+  }
+
   double _totalEarnings = 0.0;
   double _miningRate = 1.0; // Base QBIT per valid data upload
   final Set<String> _visitedHexes = {}; // Tracks coverage in current session
@@ -42,6 +67,8 @@ class SensorManager extends ChangeNotifier {
 
   double get pressure => _currentPressure;
   double get decibel => _currentDecibel;
+  String get networkType => _currentNetworkType;
+  int get latency => _currentLatency;
   bool get isSampling => _isSampling;
 
   final PrivacyGuard _privacyGuard = PrivacyGuard(salt: "sentinel-alpha-salt");
@@ -177,6 +204,11 @@ class SensorManager extends ChangeNotifier {
         Position pos = await Geolocator.getCurrentPosition(
             desiredAccuracy: LocationAccuracy.best);
         _liveLocation = LatLng(pos.latitude, pos.longitude);
+
+        // Poll Network Stats
+        _currentNetworkType = await _networkService.getNetworkType();
+        _currentLatency = await _networkService.measureLatency();
+
         notifyListeners();
         _checkUploadRule(pos, deviceId);
       } catch (e) {
@@ -216,58 +248,84 @@ class SensorManager extends ChangeNotifier {
   LatLng? _liveLocation;
   LatLng? get liveLocation => _liveLocation;
 
+  // State for PoV Algorithm
+  DateTime _lastMoveTime = DateTime.now();
+  double _currentMultiplier = 1.0;
+  bool _isHighValueEvent = false;
+
+  double get currentMultiplier => _currentMultiplier;
+  bool get isStationary =>
+      DateTime.now().difference(_lastMoveTime).inMinutes >= 5;
+
   /// Decide whether to upload data based on movement or time
   void _checkUploadRule(Position position, String deviceId) async {
     if (_syncService == null) return;
 
     final lat = position.latitude;
     final lng = position.longitude;
-
-    // 2. 智能节流逻辑 (Smart Throttling)
     final now = DateTime.now();
+
+    // --- 1. Movement & Stationary Logic ---
+    final distDiff = (_lastLat != null && _lastLng != null)
+        ? Geolocator.distanceBetween(_lastLat!, _lastLng!, lat, lng)
+        : 0.0;
+
+    if (distDiff > 20) {
+      _lastMoveTime = now; // Reset stationary timer on significant move
+    }
+
+    // --- 2. High Value Event Detection ---
+    // Noise > 80dB (Loud environment) OR Pressure sudden change (Storm/Elevator?)
+    // Simplified trigger for noise only for now.
+    _isHighValueEvent = _currentDecibel > 80.0;
+
+    // --- 3. Determine Multiplier ---
+    if (_isHighValueEvent) {
+      _currentMultiplier = 3.0; // Critical Data Bonus
+    } else if (isStationary) {
+      _currentMultiplier = 0.1; // Idle Penalty
+    } else {
+      _currentMultiplier = 1.0; // Standard Mobile
+    }
+
+    // --- 4. Upload Decision (Smart Throttling) ---
     bool shouldUpload = false;
     String reason = "";
+    final timeDiff = _lastUploadTime == null
+        ? 9999
+        : now.difference(_lastUploadTime!).inSeconds;
 
     if (_lastUploadTime == null) {
-      shouldUpload = true; // 第一条数据必发
+      shouldUpload = true;
       reason = "First pulse";
     } else {
-      final timeDiff = now.difference(_lastUploadTime!).inSeconds;
-      final distDiff = (_lastLat != null && _lastLng != null)
-          ? Geolocator.distanceBetween(_lastLat!, _lastLng!, lat, lng)
-          : 0.0;
       final noiseDiff =
           (_lastNoise != null) ? (_currentDecibel - _lastNoise!).abs() : 0.0;
 
-      // 规则 A: 最小间隔 2秒 (To avoid flooding)
-      if (timeDiff < 2) {
-        // Too fast, ignore unless urgent?
-        // For now just basic throttling.
-      } else {
-        // 规则 B: 移动距离 > 5米 (More granular for map)
-        if (distDiff > 5) {
-          shouldUpload = true;
-          reason = "Moved ${distDiff.toStringAsFixed(1)}m";
-        }
-        // 规则 C: 强制心跳 (每 30s 发一次)
-        else if (timeDiff > 30) {
-          shouldUpload = true;
-          reason = "Heartbeat";
-        }
-        // 规则 D: 显著噪音变化 (Event)
-        else if (noiseDiff > 5.0) {
-          shouldUpload = true;
-          reason = "Noise Event";
-        }
+      // 规则 A: Event Trigger (Immediate)
+      if (_isHighValueEvent && timeDiff > 5) {
+        shouldUpload = true;
+        reason =
+            "🔥 High Value Event (${_currentDecibel.toStringAsFixed(1)}dB)";
+      }
+      // 规则 B: Movement (Map Coverage)
+      else if (distDiff > 10 && timeDiff > 5) {
+        shouldUpload = true;
+        reason = "Moved ${distDiff.toStringAsFixed(1)}m";
+      }
+      // 规则 C: Heartbeat (Keep-alive)
+      // Stationary: Slower heartbeat (2 mins) to save server cost?
+      // Or keep 30s but low reward. Let's keep 30s for visibility.
+      else if (timeDiff > 30) {
+        shouldUpload = true;
+        reason = isStationary ? "Heartbeat (Idle)" : "Heartbeat (Mobile)";
       }
     }
 
-    if (!shouldUpload) {
-      return;
-    }
+    if (!shouldUpload) return;
 
     try {
-      debugPrint("🚀 Uploading: $reason");
+      debugPrint("🚀 Uploading: $reason | Multiplier: x$_currentMultiplier");
       await _syncService!.uploadReading(
         deviceId: deviceId,
         pressure: _currentPressure,
@@ -275,15 +333,23 @@ class SensorManager extends ChangeNotifier {
         lat: lat,
         lng: lng,
         referredBy: _inviterId,
+        networkType: _currentNetworkType,
+        latency: _currentLatency,
       );
 
       // --- Reward Logic ---
-      _totalEarnings += _miningRate; // Base Contribution reward
+      double earnings = _miningRate * _currentMultiplier;
 
-      final distDiff = (_lastLat != null && _lastLng != null)
-          ? Geolocator.distanceBetween(_lastLat!, _lastLng!, lat, lng)
-          : 0.0;
-      if (distDiff > 10) _totalEarnings += 0.5; // Hex/Coverage bonus simulation
+      // Hex Discovery Bonus (Simulated)
+      // Simple "Spatial Key" to simulate H3: 0.005 deg ~= 500m
+      String spatialKey = "${lat.toStringAsFixed(3)}_${lng.toStringAsFixed(3)}";
+      if (!_visitedHexes.contains(spatialKey)) {
+        _visitedHexes.add(spatialKey);
+        earnings += 2.0; // Discovery Bonus
+        debugPrint("✨ New Area Discovered! +2.0 Bonus");
+      }
+
+      _totalEarnings += earnings;
 
       _lastUploadTime = now;
       _lastLat = lat;

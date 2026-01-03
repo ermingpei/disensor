@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../core/app_strings.dart';
 import 'debug_dashboard.dart';
 
 class OnboardingPage extends StatefulWidget {
@@ -11,26 +12,23 @@ class _OnboardingPageState extends State<OnboardingPage> {
   final PageController _pageController = PageController();
   int _currentPage = 0;
 
-  final List<Map<String, String>> _pages = [
-    {
-      "title": "Decentralized Sensing",
-      "body":
-          "Join the world's first distributed environmental network. Your phone is now a scientific instrument.",
-      "icon": "🌐"
-    },
-    {
-      "title": "Proof of Coverage",
-      "body":
-          "Map air pressure and noise levels in your city. Help scientists predict weather patterns with hyper-local data.",
-      "icon": "📡"
-    },
-    {
-      "title": "Earn QBIT Rewards",
-      "body":
-          "Turn your data into value. Earn QBIT tokens for every valid contribution to the network.",
-      "icon": "💎"
-    },
-  ];
+  List<Map<String, String>> get _pages => [
+        {
+          "title": AppStrings.t('onboard_1_title'),
+          "body": AppStrings.t('onboard_1_body'),
+          "icon": "🌐"
+        },
+        {
+          "title": AppStrings.t('onboard_2_title'),
+          "body": AppStrings.t('onboard_2_body'),
+          "icon": "📡"
+        },
+        {
+          "title": AppStrings.t('onboard_3_title'),
+          "body": AppStrings.t('onboard_3_body'),
+          "icon": "💎"
+        },
+      ];
 
   @override
   Widget build(BuildContext context) {
@@ -61,15 +59,14 @@ class _OnboardingPageState extends State<OnboardingPage> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(Icons.hexagon_outlined,
-                        color: Colors.cyanAccent, size: 32),
+                    Image.asset('assets/icon/icon.png', width: 32, height: 32),
                     SizedBox(width: 8),
                     Text(
-                      "DiSENSOR",
+                      "DiSensor",
                       style: TextStyle(
                           fontSize: 28,
                           fontWeight: FontWeight.w900,
-                          letterSpacing: 4.0,
+                          letterSpacing: 2.0,
                           color: Colors.white,
                           shadows: [
                             Shadow(
@@ -81,7 +78,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
                   ],
                 ),
                 Text(
-                  "Measuring the World's Pulse",
+                  AppStrings.t('slogan'),
                   style: TextStyle(
                       color: Colors.white54,
                       fontSize: 12,
@@ -90,7 +87,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
                 ),
                 SizedBox(height: 4),
                 Text(
-                  "Powered by Qubit Rhythm",
+                  AppStrings.t('powered_by') + " Qubit Rhythm",
                   style: TextStyle(
                       color: Colors.cyanAccent.withOpacity(0.5),
                       fontSize: 10,
@@ -205,8 +202,8 @@ class _OnboardingPageState extends State<OnboardingPage> {
                               borderRadius: BorderRadius.circular(30))),
                       child: Text(
                         _currentPage == _pages.length - 1
-                            ? "ENTER NETWORK"
-                            : "NEXT",
+                            ? AppStrings.t('enter_network')
+                            : AppStrings.t('next'),
                         style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w900,
