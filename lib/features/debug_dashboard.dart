@@ -143,13 +143,13 @@ class _DebugDashboardState extends State<DebugDashboard>
             // Updated Icon - using asset image with Rounded Corners
             ClipRRect(
               borderRadius: BorderRadius.circular(8),
-              child: Image.asset('assets/icon/icon.png', width: 28, height: 28),
+              child: Image.asset('assets/icon/icon.png', width: 36, height: 36),
             ),
             SizedBox(width: 10),
             // Title Image
             Image.asset(
               'assets/icon/disensor_title.png',
-              height: 40, // Increased size (approx 1.7x)
+              height: 54, // Further increased size (approx 2.2x orig)
               fit: BoxFit.contain,
               errorBuilder: (context, error, stackTrace) {
                 return Text(
@@ -513,11 +513,15 @@ class _DebugDashboardState extends State<DebugDashboard>
           children: [
             Icon(icon, size: 20, color: color),
             SizedBox(height: 8),
-            Text(value,
-                style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white)),
+            SizedBox(height: 8),
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(value,
+                  style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white)),
+            ),
             SizedBox(height: 4),
             Text(label,
                 textAlign: TextAlign.center,
