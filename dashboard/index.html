@@ -275,6 +275,9 @@
         let pointLayer;
         let mapInstance;
         let hexLayerGroup;
+        let bgGridLayer; // Background Grid Layer
+        const bgHexCache = {};
+        const HEX_RES = 7;
 
         window.switchLayer = function (layerName) {
             currentLayer = layerName;
@@ -308,6 +311,7 @@
         function renderMarkers() {
             if (!pointLayer || !cachedReadings.length) return;
             pointLayer.clearLayers();
+            hexLayerGroup.clearLayers(); // Clear old device hexes
 
             // Group by Node ID
             const devices = {};
@@ -365,23 +369,53 @@
                         </div>
                     `);
 
-                    // Simple Hex Grid Visual (Coverage)
-                    if (typeof h3 !== 'undefined' && hexLayerGroup && !mapInstance.hasLayer(hexLayerGroup)) {
+                    // Active Device Hex Visual (Green Halo)
+                    if (typeof h3 !== 'undefined') {
                         const getH3Index = (lat, lng, r) => typeof h3.latLngToCell === 'function' ? h3.latLngToCell(lat, lng, r) : h3.geoToH3(lat, lng, r);
                         const getBoundary = (idx) => typeof h3.cellToBoundary === 'function' ? h3.cellToBoundary(idx) : h3.h3ToGeoBoundary(idx);
 
-                        const idx = getH3Index(pos.lat, pos.lng, 7);
-                        const boundary = getBoundary(idx);
-                        L.polygon(boundary, {
-                            color: '#27ae60', weight: 1, fillColor: '#2ecc71', fillOpacity: 0.2, interactive: false
-                        }).addTo(hexLayerGroup);
+                        try {
+                            const idx = getH3Index(pos.lat, pos.lng, HEX_RES);
+                            const boundary = getBoundary(idx);
+                            L.polygon(boundary, {
+                                color: markerColor,
+                                weight: 2,
+                                fillColor: markerColor,
+                                fillOpacity: 0.15,
+                                interactive: false
+                            }).addTo(hexLayerGroup);
+                        } catch (e) { }
                     }
                 }
             });
-            // Add hex layer if not empty
-            if (hexLayerGroup.getLayers().length > 0) {
-                hexLayerGroup.addTo(mapInstance);
-            }
+        }
+
+        // --- Background Grid Logic ---
+        function updateBackgroundGrid() {
+            if (typeof h3 === 'undefined') return;
+            const center = mapInstance.getCenter();
+            try {
+                const getH3Index = (lat, lng, r) => typeof h3.latLngToCell === 'function' ? h3.latLngToCell(lat, lng, r) : h3.geoToH3(lat, lng, r);
+                const getBoundary = (idx) => typeof h3.cellToBoundary === 'function' ? h3.cellToBoundary(idx) : h3.h3ToGeoBoundary(idx);
+                const getDisk = (idx, r) => typeof h3.gridDisk === 'function' ? h3.gridDisk(idx, r) : h3.kRing(idx, r);
+
+                const centerCell = getH3Index(center.lat, center.lng, HEX_RES);
+                const cells = getDisk(centerCell, 15); // Slightly larger radius for background
+
+                cells.forEach(idx => {
+                    if (!bgHexCache[idx]) {
+                        const boundary = getBoundary(idx);
+                        const poly = L.polygon(boundary, {
+                            color: '#ccc', // Lighter grey
+                            weight: 1,
+                            dashArray: '4, 4',
+                            fillColor: 'transparent',
+                            interactive: false
+                        }).addTo(bgGridLayer);
+                        bgHexCache[idx] = poly;
+                    }
+                });
+            } catch (err) { console.error(err); }
         }
 
         window.onload = async function () {
@@ -394,10 +428,16 @@
             const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFsY3p5ZnRsaGNkc2lmam50Y2JoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY5NzE1MTAsImV4cCI6MjA4MjU0NzUxMH0.839c_boZy57LB-gBXuJjevubC2VVYmvNkQdTg1uB-y0';
             const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-            pointLayer = L.layerGroup().addTo(mapInstance);
-            hexLayerGroup = L.layerGroup().addTo(mapInstance);
+            // Initialize Layers
+            bgGridLayer = L.layerGroup().addTo(mapInstance); // Bottom layer
+            hexLayerGroup = L.layerGroup().addTo(mapInstance); // Middle layer
+            pointLayer = L.layerGroup().addTo(mapInstance); // Top layer(markers)
 
             layerControl.addTo(mapInstance);
+
+            // Setup Background Grid Events
+            mapInstance.on('moveend', updateBackgroundGrid);
+            setTimeout(updateBackgroundGrid, 1000); // Initial background draw
 
             try {
                 const { count } = await supabase.from('readings').select('*', { count: 'exact', head: true });
@@ -419,7 +459,10 @@
                     // Center map on first device if available
                     if (readings.length > 0) {
                         const first = parseHexString(readings[0].location);
-                        if (first) mapInstance.setView([first.lat, first.lng], 12);
+                        if (first) {
+                            mapInstance.setView([first.lat, first.lng], 13);
+                            setTimeout(updateBackgroundGrid, 500); // Re-update grid after move
+                        }
                     }
                 }
             } catch (err) { console.error(err); }

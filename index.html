@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Qubit Rhythm - Distributed Environmental Data Network</title>
+    <title>DiSensor Network - Measuring the World's Pulse</title>
     <meta name="description"
         content="Real-time pressure & noise mapping from distributed sensors. Hyperlocal environmental data API for weather, urban planning, and AI.">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -159,9 +159,9 @@
 
 <body>
     <section class="hero">
-        <h1>⚛️ Qubit Rhythm</h1>
-        <p>Measuring the World's Pulse<br>
-            <small style="opacity: 0.8; font-size: 0.9rem;">Powered by DiSensor Network</small><br><br>
+        <h1>🌐 DiSensor Network</h1>
+        <p>Measuring the World's Pulse<br><br>
+            <small style="opacity: 0.8; font-size: 0.9rem;">Powered by Qubit Rhythm</small><br><br>
             Real-time Pressure & Noise Mapping from Distributed Mobile Sensors
         </p>
         <a href="https://github.com/ermingpei/disensor" class="cta-button">View on GitHub</a>
@@ -222,14 +222,15 @@
     </section>
 
     <footer class="footer">
-        <p>&copy; 2025 Qubit Rhythm. Building the world's first distributed environmental sensing layer.</p>
+        <p>&copy; 2025 Qubit Rhythm. DiSensor Network - Building the world's first distributed environmental sensing
+            layer.</p>
         <p style="margin-top: 0.5rem; opacity: 0.7;">Contact: hello@qubitrhythm.com</p>
     </footer>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
-        console.log('🚀 Qubit Rhythm - DiSensor Loading...');
+        console.log('🚀 DiSensor Network powered by Qubit Rhythm Loading...');
 
         function parseHexString(hex) {
             if (!hex || hex.length < 50) return null;
@@ -246,57 +247,197 @@
             } catch (e) { return null; }
         }
 
+        // --- Layer Control Logic ---
+        const layerControl = L.control({ position: 'topright' });
+        layerControl.onAdd = function (map) {
+            const div = L.DomUtil.create('div', 'layer-control');
+            div.innerHTML = `
+                <div style="background: white; padding: 10px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+                    <h4 style="margin: 0 0 5px 0;">View Mode</h4>
+                    <button class="layer-btn active" onclick="switchLayer('network')" id="btn-network">📡 Network</button>
+                    <button class="layer-btn" onclick="switchLayer('noise')" id="btn-noise">🔊 Noise</button>
+                    <button class="layer-btn" onclick="switchLayer('pressure')" id="btn-pressure">☁️ Pressure</button>
+                </div>
+                <style>
+                    .layer-btn {
+                        display: block; width: 100%; padding: 5px 10px; margin: 2px 0;
+                        border: 1px solid #ddd; background: #fff; border-radius: 4px; cursor: pointer;
+                    }
+                    .layer-btn:hover { background: #f0f0f0; }
+                    .layer-btn.active { background: #667eea; color: white; border-color: #667eea; }
+                </style>
+            `;
+            return div;
+        };
+
+        let currentLayer = 'network';
+        let cachedReadings = [];
+        let pointLayer;
+        let mapInstance;
+        let hexLayerGroup;
+        let bgGridLayer; // Background Grid Layer
+        const bgHexCache = {};
+        const HEX_RES = 7;
+
+        window.switchLayer = function (layerName) {
+            currentLayer = layerName;
+            document.querySelectorAll('.layer-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById(`btn-${layerName}`).classList.add('active');
+            renderMarkers();
+        }
+
+        function getColorForReading(r, mode) {
+            if (mode === 'network') {
+                if (r.network_type === 'WiFi') return '#3498db'; // Blue
+                if (r.network_type === 'Mobile') return '#9b59b6'; // Purple
+                return '#95a5a6'; // Grey
+            }
+            if (mode === 'noise') {
+                const db = r.decibel_db;
+                if (db < 40) return '#2ecc71'; // Green (Quiet)
+                if (db < 60) return '#f1c40f'; // Yellow
+                if (db < 80) return '#e67e22'; // Orange
+                return '#e74c3c'; // Red (Loud)
+            }
+            if (mode === 'pressure') {
+                const p = r.pressure_hpa;
+                if (p < 1000) return '#3498db'; // Low (Storm)
+                if (p < 1015) return '#2ecc71'; // Normal
+                return '#e74c3c'; // High (Sunny)
+            }
+            return '#2ecc71';
+        }
+
+        function renderMarkers() {
+            if (!pointLayer || !cachedReadings.length) return;
+            pointLayer.clearLayers();
+            hexLayerGroup.clearLayers(); // Clear old device hexes
+
+            // Group by Node ID
+            const devices = {};
+            cachedReadings.forEach(r => {
+                if (!devices[r.node_id]) devices[r.node_id] = r;
+            });
+
+            // Update active count
+            document.getElementById('active-sensors').textContent = Object.keys(devices).length;
+
+            Object.values(devices).forEach(r => {
+                const pos = parseHexString(r.location);
+                if (pos) {
+                    const markerColor = getColorForReading(r, currentLayer);
+                    const netLabel = r.network_type || 'Unknown';
+                    const latencyStr = r.latency_ms ? `${r.latency_ms}ms` : '--';
+                    const shortId = r.node_id.substring(0, 6).toUpperCase();
+
+                    const isNet = currentLayer === 'network';
+                    const isNoise = currentLayer === 'noise';
+                    const isPress = currentLayer === 'pressure';
+
+                    const styleActive = 'font-weight:bold; color:#2c3e50; background:rgba(0,0,0,0.05); display:block; padding:2px 4px; border-radius:3px; margin:2px 0;';
+                    const styleNormal = 'display:block; padding:2px 4px; margin:2px 0; color:#555;';
+
+                    L.circleMarker([pos.lat, pos.lng], {
+                        radius: 12,
+                        fillColor: markerColor,
+                        color: '#fff',
+                        weight: 3,
+                        opacity: 1,
+                        fillOpacity: 0.9
+                    }).addTo(pointLayer).bindPopup(`
+                        <div style="min-width: 160px; font-family: sans-serif;">
+                            <h3 style="margin:0 0 8px 0; color:#333; font-size:1.1em; border-bottom:1px solid #eee; padding-bottom:5px;">
+                                📱 Device: ${shortId}
+                            </h3>
+                            <div style="font-size: 0.85em; color: #888; margin-bottom: 8px;">
+                                Current View: <b>${currentLayer.toUpperCase()}</b>
+                            </div>
+                            <div style="background: #f8f9fa; padding: 8px; border-radius: 6px; margin-bottom: 8px; border-left: 5px solid ${markerColor}; font-size: 0.95em; line-height: 1.4;">
+                                <div style="${isNet ? styleActive : styleNormal}">
+                                    📡 <b>Network:</b> ${netLabel} <span style="font-size:0.9em; color:#666">(${latencyStr})</span>
+                                </div>
+                                <div style="${isNoise ? styleActive : styleNormal}">
+                                    🔊 <b>Noise:</b> ${r.decibel_db.toFixed(1)} dB
+                                </div>
+                                <div style="${isPress ? styleActive : styleNormal}">
+                                    ☁️ <b>Pressure:</b> ${r.pressure_hpa.toFixed(0)} hPa
+                                </div>
+                            </div>
+                            <div style="text-align: right;">
+                                <i style="font-size: 0.8em; color: #aaa">Active: ${new Date(r.timestamp).toLocaleTimeString()}</i>
+                            </div>
+                        </div>
+                    `);
+
+                    // Active Device Hex Visual (Green Halo)
+                    if (typeof h3 !== 'undefined') {
+                        const getH3Index = (lat, lng, r) => typeof h3.latLngToCell === 'function' ? h3.latLngToCell(lat, lng, r) : h3.geoToH3(lat, lng, r);
+                        const getBoundary = (idx) => typeof h3.cellToBoundary === 'function' ? h3.cellToBoundary(idx) : h3.h3ToGeoBoundary(idx);
+
+                        try {
+                            const idx = getH3Index(pos.lat, pos.lng, HEX_RES);
+                            const boundary = getBoundary(idx);
+                            L.polygon(boundary, {
+                                color: markerColor,
+                                weight: 2,
+                                fillColor: markerColor,
+                                fillOpacity: 0.15,
+                                interactive: false
+                            }).addTo(hexLayerGroup);
+                        } catch (e) { }
+                    }
+                }
+            });
+        }
+
+        // --- Background Grid Logic ---
+        function updateBackgroundGrid() {
+            if (typeof h3 === 'undefined') return;
+            const center = mapInstance.getCenter();
+            try {
+                const getH3Index = (lat, lng, r) => typeof h3.latLngToCell === 'function' ? h3.latLngToCell(lat, lng, r) : h3.geoToH3(lat, lng, r);
+                const getBoundary = (idx) => typeof h3.cellToBoundary === 'function' ? h3.cellToBoundary(idx) : h3.h3ToGeoBoundary(idx);
+                const getDisk = (idx, r) => typeof h3.gridDisk === 'function' ? h3.gridDisk(idx, r) : h3.kRing(idx, r);
+
+                const centerCell = getH3Index(center.lat, center.lng, HEX_RES);
+                const cells = getDisk(centerCell, 15); // Slightly larger radius for background
+
+                cells.forEach(idx => {
+                    if (!bgHexCache[idx]) {
+                        const boundary = getBoundary(idx);
+                        const poly = L.polygon(boundary, {
+                            color: '#ccc', // Lighter grey
+                            weight: 1,
+                            dashArray: '4, 4',
+                            fillColor: 'transparent',
+                            interactive: false
+                        }).addTo(bgGridLayer);
+                        bgHexCache[idx] = poly;
+                    }
+                });
+            } catch (err) { console.error(err); }
+        }
+
         window.onload = async function () {
-            const map = L.map('map').setView([53.5461, -113.4938], 12);
+            mapInstance = L.map('map').setView([53.5461, -113.4938], 12);
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                 attribution: '© OpenStreetMap contributors'
-            }).addTo(map);
+            }).addTo(mapInstance);
 
             const SUPABASE_URL = 'https://alczyftlhcdsifjntcbh.supabase.co';
             const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFsY3p5ZnRsaGNkc2lmam50Y2JoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY5NzE1MTAsImV4cCI6MjA4MjU0NzUxMH0.839c_boZy57LB-gBXuJjevubC2VVYmvNkQdTg1uB-y0';
             const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-            const res = 7; // Resolution 7 is better for city-wide visibility
-            const hexLayers = {};
-            const pointLayer = L.layerGroup().addTo(map);
+            // Initialize Layers
+            bgGridLayer = L.layerGroup().addTo(mapInstance); // Bottom layer
+            hexLayerGroup = L.layerGroup().addTo(mapInstance); // Middle layer
+            pointLayer = L.layerGroup().addTo(mapInstance); // Top layer(markers)
 
-            function updateGrid() {
-                if (typeof h3 === 'undefined') return;
-                const center = map.getCenter();
-                try {
-                    const getH3Index = (lat, lng, r) => typeof h3.latLngToCell === 'function' ? h3.latLngToCell(lat, lng, r) : h3.geoToH3(lat, lng, r);
-                    const getBoundary = (idx) => typeof h3.cellToBoundary === 'function' ? h3.cellToBoundary(idx) : h3.h3ToGeoBoundary(idx);
-                    const getDisk = (idx, r) => typeof h3.gridDisk === 'function' ? h3.gridDisk(idx, r) : h3.kRing(idx, r);
+            layerControl.addTo(mapInstance);
 
-                    const centerCell = getH3Index(center.lat, center.lng, res);
-                    const cells = getDisk(centerCell, 12);
-
-                    cells.forEach(idx => {
-                        if (!hexLayers[idx]) {
-                            const boundary = getBoundary(idx);
-                            const poly = L.polygon(boundary, {
-                                color: '#999',
-                                weight: 1,
-                                dashArray: '5, 8',
-                                fillColor: 'transparent',
-                                fillOpacity: 0,
-                                interactive: true
-                            }).addTo(map);
-                            poly.bindPopup(`Zone: ${idx}`);
-                            hexLayers[idx] = poly;
-                        }
-                    });
-                } catch (err) { console.error(err); }
-            }
-
-            map.on('moveend', updateGrid);
-            map.on('zoomend', function () {
-                updateGrid();
-                if (map.getZoom() >= 13) { if (!map.hasLayer(pointLayer)) map.addLayer(pointLayer); }
-                else { if (map.hasLayer(pointLayer)) map.removeLayer(pointLayer); }
-            });
-
-            setTimeout(updateGrid, 1000);
+            // Setup Background Grid Events
+            mapInstance.on('moveend', updateBackgroundGrid);
+            setTimeout(updateBackgroundGrid, 1000); // Initial background draw
 
             try {
                 const { count } = await supabase.from('readings').select('*', { count: 'exact', head: true });
@@ -304,38 +445,25 @@
             } catch (e) { }
 
             try {
-                const { data: readings } = await supabase.from('readings').select('location, pressure_hpa, decibel_db, timestamp, node_id').order('timestamp', { ascending: false }).limit(500);
-                if (readings) {
-                    readings.forEach(r => {
-                        const pos = parseHexString(r.location);
-                        if (pos) {
-                            L.circleMarker([pos.lat, pos.lng], {
-                                radius: 5,
-                                fillColor: '#2ecc71',
-                                color: '#fff',
-                                weight: 1,
-                                fillOpacity: 0.9
-                            }).addTo(pointLayer).bindPopup(`<b>Sensor</b><br>${r.pressure_hpa.toFixed(1)} hPa`);
+                // Fetch data
+                const { data: readings } = await supabase
+                    .from('readings')
+                    .select('location, pressure_hpa, decibel_db, timestamp, node_id, network_type, latency_ms')
+                    .order('timestamp', { ascending: false })
+                    .limit(1000);
 
-                            if (typeof h3 !== 'undefined') {
-                                const getH3Index = (lat, lng, r) => typeof h3.latLngToCell === 'function' ? h3.latLngToCell(lat, lng, r) : h3.geoToH3(lat, lng, r);
-                                const idx = getH3Index(pos.lat, pos.lng, res);
-                                let layer = hexLayers[idx];
-                                if (!layer) {
-                                    const boundary = typeof h3.cellToBoundary === 'function' ? h3.cellToBoundary(idx) : h3.h3ToGeoBoundary(idx);
-                                    layer = L.polygon(boundary, { interactive: true }).addTo(map);
-                                    hexLayers[idx] = layer;
-                                }
-                                layer.setStyle({
-                                    color: '#27ae60',
-                                    weight: 2,
-                                    dashArray: null,
-                                    fillColor: '#2ecc71',
-                                    fillOpacity: 0.3
-                                });
-                            }
+                if (readings) {
+                    cachedReadings = readings;
+                    renderMarkers(); // Initial Render
+
+                    // Center map on first device if available
+                    if (readings.length > 0) {
+                        const first = parseHexString(readings[0].location);
+                        if (first) {
+                            mapInstance.setView([first.lat, first.lng], 13);
+                            setTimeout(updateBackgroundGrid, 500); // Re-update grid after move
                         }
-                    });
+                    }
                 }
             } catch (err) { console.error(err); }
         };
