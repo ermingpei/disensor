@@ -247,57 +247,141 @@
             } catch (e) { return null; }
         }
 
+        // --- Layer Control Logic ---
+        const layerControl = L.control({ position: 'topright' });
+        layerControl.onAdd = function (map) {
+            const div = L.DomUtil.create('div', 'layer-control');
+            div.innerHTML = `
+                <div style="background: white; padding: 10px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+                    <h4 style="margin: 0 0 5px 0;">View Mode</h4>
+                    <button class="layer-btn active" onclick="switchLayer('network')" id="btn-network">📡 Network</button>
+                    <button class="layer-btn" onclick="switchLayer('noise')" id="btn-noise">🔊 Noise</button>
+                    <button class="layer-btn" onclick="switchLayer('pressure')" id="btn-pressure">☁️ Pressure</button>
+                </div>
+                <style>
+                    .layer-btn {
+                        display: block; width: 100%; padding: 5px 10px; margin: 2px 0;
+                        border: 1px solid #ddd; background: #fff; border-radius: 4px; cursor: pointer;
+                    }
+                    .layer-btn:hover { background: #f0f0f0; }
+                    .layer-btn.active { background: #667eea; color: white; border-color: #667eea; }
+                </style>
+            `;
+            return div;
+        };
+
+        let currentLayer = 'network';
+        let cachedReadings = [];
+        let pointLayer;
+        let mapInstance;
+        let hexLayerGroup;
+
+        window.switchLayer = function (layerName) {
+            currentLayer = layerName;
+            document.querySelectorAll('.layer-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById(`btn-${layerName}`).classList.add('active');
+            renderMarkers();
+        }
+
+        function getColorForReading(r, mode) {
+            if (mode === 'network') {
+                if (r.network_type === 'WiFi') return '#3498db'; // Blue
+                if (r.network_type === 'Mobile') return '#9b59b6'; // Purple
+                return '#95a5a6'; // Grey
+            }
+            if (mode === 'noise') {
+                const db = r.decibel_db;
+                if (db < 40) return '#2ecc71'; // Green (Quiet)
+                if (db < 60) return '#f1c40f'; // Yellow
+                if (db < 80) return '#e67e22'; // Orange
+                return '#e74c3c'; // Red (Loud)
+            }
+            if (mode === 'pressure') {
+                const p = r.pressure_hpa;
+                if (p < 1000) return '#3498db'; // Low (Storm)
+                if (p < 1015) return '#2ecc71'; // Normal
+                return '#e74c3c'; // High (Sunny)
+            }
+            return '#2ecc71';
+        }
+
+        function renderMarkers() {
+            if (!pointLayer || !cachedReadings.length) return;
+            pointLayer.clearLayers();
+
+            // Group by Node ID
+            const devices = {};
+            cachedReadings.forEach(r => {
+                if (!devices[r.node_id]) devices[r.node_id] = r;
+            });
+
+            // Update active count
+            document.getElementById('active-sensors').textContent = Object.keys(devices).length;
+
+            Object.values(devices).forEach(r => {
+                const pos = parseHexString(r.location);
+                if (pos) {
+                    const markerColor = getColorForReading(r, currentLayer);
+                    const netLabel = r.network_type || 'Unknown';
+                    const latencyStr = r.latency_ms ? `${r.latency_ms}ms` : '--';
+                    const shortId = r.node_id.substring(0, 6).toUpperCase();
+
+                    L.circleMarker([pos.lat, pos.lng], {
+                        radius: 12,
+                        fillColor: markerColor,
+                        color: '#fff',
+                        weight: 3,
+                        opacity: 1,
+                        fillOpacity: 0.9
+                    }).addTo(pointLayer).bindPopup(`
+                        <div style="min-width: 150px">
+                            <h3 style="margin:0 0 5px 0; color:#333;">📱 Device: ${shortId}</h3>
+                             <div style="font-size: 0.9em; color: #666; margin-bottom: 5px;">
+                                Mode: <b>${currentLayer.toUpperCase()}</b>
+                            </div>
+                            <div style="background: #f8f9fa; padding: 5px; border-radius: 4px; margin-bottom: 5px; border-left: 4px solid ${markerColor}">
+                                <b>Network:</b> ${netLabel}<br>
+                                <b>Latency:</b> ${latencyStr}<br>
+                                <b>Noise:</b> ${r.decibel_db.toFixed(1)} dB<br>
+                                <b>Pressure:</b> ${r.pressure_hpa.toFixed(0)} hPa
+                            </div>
+                            <i style="font-size: 0.8em; color: #999">Last active: ${new Date(r.timestamp).toLocaleTimeString()}</i>
+                        </div>
+                    `);
+
+                    // Simple Hex Grid Visual (Coverage)
+                    if (typeof h3 !== 'undefined' && hexLayerGroup && !mapInstance.hasLayer(hexLayerGroup)) {
+                        const getH3Index = (lat, lng, r) => typeof h3.latLngToCell === 'function' ? h3.latLngToCell(lat, lng, r) : h3.geoToH3(lat, lng, r);
+                        const getBoundary = (idx) => typeof h3.cellToBoundary === 'function' ? h3.cellToBoundary(idx) : h3.h3ToGeoBoundary(idx);
+
+                        const idx = getH3Index(pos.lat, pos.lng, 7);
+                        const boundary = getBoundary(idx);
+                        L.polygon(boundary, {
+                            color: '#27ae60', weight: 1, fillColor: '#2ecc71', fillOpacity: 0.2, interactive: false
+                        }).addTo(hexLayerGroup);
+                    }
+                }
+            });
+            // Add hex layer if not empty
+            if (hexLayerGroup.getLayers().length > 0) {
+                hexLayerGroup.addTo(mapInstance);
+            }
+        }
+
         window.onload = async function () {
-            const map = L.map('map').setView([53.5461, -113.4938], 12);
+            mapInstance = L.map('map').setView([53.5461, -113.4938], 12);
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                 attribution: '© OpenStreetMap contributors'
-            }).addTo(map);
+            }).addTo(mapInstance);
 
             const SUPABASE_URL = 'https://alczyftlhcdsifjntcbh.supabase.co';
             const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFsY3p5ZnRsaGNkc2lmam50Y2JoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY5NzE1MTAsImV4cCI6MjA4MjU0NzUxMH0.839c_boZy57LB-gBXuJjevubC2VVYmvNkQdTg1uB-y0';
             const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-            const res = 7; // Resolution 7 is better for city-wide visibility
-            const hexLayers = {};
-            const pointLayer = L.layerGroup().addTo(map);
+            pointLayer = L.layerGroup().addTo(mapInstance);
+            hexLayerGroup = L.layerGroup().addTo(mapInstance);
 
-            function updateGrid() {
-                if (typeof h3 === 'undefined') return;
-                const center = map.getCenter();
-                try {
-                    const getH3Index = (lat, lng, r) => typeof h3.latLngToCell === 'function' ? h3.latLngToCell(lat, lng, r) : h3.geoToH3(lat, lng, r);
-                    const getBoundary = (idx) => typeof h3.cellToBoundary === 'function' ? h3.cellToBoundary(idx) : h3.h3ToGeoBoundary(idx);
-                    const getDisk = (idx, r) => typeof h3.gridDisk === 'function' ? h3.gridDisk(idx, r) : h3.kRing(idx, r);
-
-                    const centerCell = getH3Index(center.lat, center.lng, res);
-                    const cells = getDisk(centerCell, 12);
-
-                    cells.forEach(idx => {
-                        if (!hexLayers[idx]) {
-                            const boundary = getBoundary(idx);
-                            const poly = L.polygon(boundary, {
-                                color: '#999',
-                                weight: 1,
-                                dashArray: '5, 8',
-                                fillColor: 'transparent',
-                                fillOpacity: 0,
-                                interactive: true
-                            }).addTo(map);
-                            poly.bindPopup(`Zone: ${idx}`);
-                            hexLayers[idx] = poly;
-                        }
-                    });
-                } catch (err) { console.error(err); }
-            }
-
-            map.on('moveend', updateGrid);
-            map.on('zoomend', function () {
-                updateGrid();
-                if (map.getZoom() >= 13) { if (!map.hasLayer(pointLayer)) map.addLayer(pointLayer); }
-                else { if (map.hasLayer(pointLayer)) map.removeLayer(pointLayer); }
-            });
-
-            setTimeout(updateGrid, 1000);
+            layerControl.addTo(mapInstance);
 
             try {
                 const { count } = await supabase.from('readings').select('*', { count: 'exact', head: true });
@@ -305,7 +389,7 @@
             } catch (e) { }
 
             try {
-                // Fetch more data to ensure we capture all active devices
+                // Fetch data
                 const { data: readings } = await supabase
                     .from('readings')
                     .select('location, pressure_hpa, decibel_db, timestamp, node_id, network_type, latency_ms')
@@ -313,85 +397,14 @@
                     .limit(1000);
 
                 if (readings) {
-                    // Group by Node ID to find the latest reading for each device
-                    const devices = {};
-                    readings.forEach(r => {
-                        if (!devices[r.node_id]) {
-                            devices[r.node_id] = r;
-                        }
-                    });
+                    cachedReadings = readings;
+                    renderMarkers(); // Initial Render
 
-                    // Render each unique device
-                    Object.values(devices).forEach(r => {
-                        const pos = parseHexString(r.location);
-                        if (pos) {
-                            // Color coding based on Network Type
-                            let markerColor = '#2ecc71'; // Default Green (Unknown/Other)
-                            let netLabel = 'Unknown';
-
-                            if (r.network_type === 'WiFi') {
-                                markerColor = '#3498db'; // Blue
-                                netLabel = 'WiFi';
-                            } else if (r.network_type === 'Mobile') {
-                                markerColor = '#9b59b6'; // Purple
-                                netLabel = 'Mobile';
-                            } else if (r.network_type) {
-                                netLabel = r.network_type; // Display actual value if present (e.g., Ethernet)
-                            }
-
-                            // Latency string
-                            const latencyStr = r.latency_ms ? `${r.latency_ms}ms` : '--';
-
-                            // Short Node ID
-                            const shortId = r.node_id.substring(0, 6).toUpperCase();
-
-                            // Create a custom marker (Circle with border)
-                            L.circleMarker([pos.lat, pos.lng], {
-                                radius: 10, // Larger radius for device
-                                fillColor: markerColor,
-                                color: '#fff',
-                                weight: 3, // Thicker white border
-                                opacity: 1,
-                                fillOpacity: 0.8
-                            }).addTo(pointLayer).bindPopup(`
-                                <div style="min-width: 150px">
-                                    <h3 style="margin:0 0 5px 0; color:#333;">📱 Device: ${shortId}</h3>
-                                    <div style="background: #f8f9fa; padding: 5px; border-radius: 4px; margin-bottom: 5px;">
-                                        <b>Network:</b> <span style="color:${markerColor}">${netLabel}</span><br>
-                                        <b>Latency:</b> ${latencyStr}
-                                    </div>
-                                    <div style="font-size: 0.9em; color: #666;">
-                                        Pressure: ${r.pressure_hpa.toFixed(1)} hPa<br>
-                                        Noise: ${r.decibel_db.toFixed(1)} dB<br>
-                                        <i style="font-size: 0.8em">Last active: ${new Date(r.timestamp).toLocaleTimeString()}</i>
-                                    </div>
-                                </div>
-                            `);
-
-                            // Also visualize the coverage zone (H3) for this device
-                            if (typeof h3 !== 'undefined') {
-                                const getH3Index = (lat, lng, r) => typeof h3.latLngToCell === 'function' ? h3.latLngToCell(lat, lng, r) : h3.geoToH3(lat, lng, r);
-                                const idx = getH3Index(pos.lat, pos.lng, res);
-                                let layer = hexLayers[idx];
-                                if (!layer) {
-                                    const boundary = typeof h3.cellToBoundary === 'function' ? h3.cellToBoundary(idx) : h3.h3ToGeoBoundary(idx);
-                                    layer = L.polygon(boundary, { interactive: true }).addTo(map);
-                                    hexLayers[idx] = layer;
-                                }
-                                layer.setStyle({
-                                    color: '#27ae60',
-                                    weight: 2,
-                                    dashArray: null,
-                                    fillColor: '#2ecc71',
-                                    fillOpacity: 0.3
-                                });
-                            }
-                        }
-                    });
-
-                    // Update active count based on actual unique devices found
-                    const activeCount = Object.keys(devices).length;
-                    document.getElementById('active-sensors').textContent = activeCount;
+                    // Center map on first device if available
+                    if (readings.length > 0) {
+                        const first = parseHexString(readings[0].location);
+                        if (first) mapInstance.setView([first.lat, first.lng], 12);
+                    }
                 }
             } catch (err) { console.error(err); }
         };
