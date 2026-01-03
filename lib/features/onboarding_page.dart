@@ -59,21 +59,32 @@ class _OnboardingPageState extends State<OnboardingPage> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Image.asset('assets/icon/icon.png', width: 32, height: 32),
-                    SizedBox(width: 8),
-                    Text(
-                      "DiSensor",
-                      style: TextStyle(
-                          fontSize: 28,
-                          fontWeight: FontWeight.w900,
-                          letterSpacing: 2.0,
-                          color: Colors.white,
-                          shadows: [
-                            Shadow(
-                                blurRadius: 10,
-                                color: Colors.cyanAccent,
-                                offset: Offset(0, 0))
-                          ]),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(12),
+                      child: Image.asset('assets/icon/icon.png',
+                          width: 48, height: 48),
+                    ),
+                    SizedBox(width: 12),
+                    Image.asset(
+                      'assets/icon/disensor_title.png',
+                      height: 50,
+                      fit: BoxFit.contain,
+                      errorBuilder: (context, error, stackTrace) {
+                        return Text(
+                          "DiSensor",
+                          style: TextStyle(
+                              fontSize: 28,
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: 2.0,
+                              color: Colors.white,
+                              shadows: [
+                                Shadow(
+                                    blurRadius: 10,
+                                    color: Colors.cyanAccent,
+                                    offset: Offset(0, 0))
+                              ]),
+                        );
+                      },
                     ),
                   ],
                 ),

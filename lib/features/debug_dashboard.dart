@@ -400,7 +400,7 @@ class _DebugDashboardState extends State<DebugDashboard>
                     tileBuilder: (context, widget, tile) {
                       return ColorFiltered(
                         colorFilter: ColorFilter.mode(
-                          Colors.black.withOpacity(0.6),
+                          Colors.black.withOpacity(0.3), // Reduced from 0.6
                           BlendMode.darken,
                         ),
                         child: widget,
@@ -417,7 +417,7 @@ class _DebugDashboardState extends State<DebugDashboard>
                         end: Alignment.bottomCenter,
                         colors: [
                       Colors.transparent,
-                      Colors.black.withOpacity(0.8),
+                      Colors.black.withOpacity(0.6), // Reduced from 0.8
                     ])),
               ),
               Padding(
