@@ -305,46 +305,70 @@
             } catch (e) { }
 
             try {
+                // Fetch more data to ensure we capture all active devices
                 const { data: readings } = await supabase
                     .from('readings')
                     .select('location, pressure_hpa, decibel_db, timestamp, node_id, network_type, latency_ms')
                     .order('timestamp', { ascending: false })
-                    .limit(500);
+                    .limit(1000);
 
                 if (readings) {
+                    // Group by Node ID to find the latest reading for each device
+                    const devices = {};
                     readings.forEach(r => {
+                        if (!devices[r.node_id]) {
+                            devices[r.node_id] = r;
+                        }
+                    });
+
+                    // Render each unique device
+                    Object.values(devices).forEach(r => {
                         const pos = parseHexString(r.location);
                         if (pos) {
                             // Color coding based on Network Type
-                            let markerColor = '#2ecc71'; // Default Green
+                            let markerColor = '#2ecc71'; // Default Green (Unknown/Other)
                             let netLabel = 'Unknown';
-                            
+
                             if (r.network_type === 'WiFi') {
                                 markerColor = '#3498db'; // Blue
                                 netLabel = 'WiFi';
                             } else if (r.network_type === 'Mobile') {
                                 markerColor = '#9b59b6'; // Purple
                                 netLabel = 'Mobile';
+                            } else if (r.network_type) {
+                                netLabel = r.network_type; // Display actual value if present (e.g., Ethernet)
                             }
 
                             // Latency string
                             const latencyStr = r.latency_ms ? `${r.latency_ms}ms` : '--';
 
+                            // Short Node ID
+                            const shortId = r.node_id.substring(0, 6).toUpperCase();
+
+                            // Create a custom marker (Circle with border)
                             L.circleMarker([pos.lat, pos.lng], {
-                                radius: 6, // Slightly larger
+                                radius: 10, // Larger radius for device
                                 fillColor: markerColor,
                                 color: '#fff',
-                                weight: 1,
-                                fillOpacity: 0.9
+                                weight: 3, // Thicker white border
+                                opacity: 1,
+                                fillOpacity: 0.8
                             }).addTo(pointLayer).bindPopup(`
-                                <b>Sensor Data</b><br>
-                                Pressure: ${r.pressure_hpa.toFixed(1)} hPa<br>
-                                Noise: ${r.decibel_db.toFixed(1)} dB<br>
-                                <hr style="margin:4px 0; border:0; border-top:1px solid #eee">
-                                <b>Network:</b> ${netLabel}<br>
-                                <b>Latency:</b> ${latencyStr}
+                                <div style="min-width: 150px">
+                                    <h3 style="margin:0 0 5px 0; color:#333;">📱 Device: ${shortId}</h3>
+                                    <div style="background: #f8f9fa; padding: 5px; border-radius: 4px; margin-bottom: 5px;">
+                                        <b>Network:</b> <span style="color:${markerColor}">${netLabel}</span><br>
+                                        <b>Latency:</b> ${latencyStr}
+                                    </div>
+                                    <div style="font-size: 0.9em; color: #666;">
+                                        Pressure: ${r.pressure_hpa.toFixed(1)} hPa<br>
+                                        Noise: ${r.decibel_db.toFixed(1)} dB<br>
+                                        <i style="font-size: 0.8em">Last active: ${new Date(r.timestamp).toLocaleTimeString()}</i>
+                                    </div>
+                                </div>
                             `);
 
+                            // Also visualize the coverage zone (H3) for this device
                             if (typeof h3 !== 'undefined') {
                                 const getH3Index = (lat, lng, r) => typeof h3.latLngToCell === 'function' ? h3.latLngToCell(lat, lng, r) : h3.geoToH3(lat, lng, r);
                                 const idx = getH3Index(pos.lat, pos.lng, res);
@@ -364,6 +388,10 @@
                             }
                         }
                     });
+
+                    // Update active count based on actual unique devices found
+                    const activeCount = Object.keys(devices).length;
+                    document.getElementById('active-sensors').textContent = activeCount;
                 }
             } catch (err) { console.error(err); }
         };
