@@ -305,18 +305,45 @@
             } catch (e) { }
 
             try {
-                const { data: readings } = await supabase.from('readings').select('location, pressure_hpa, decibel_db, timestamp, node_id').order('timestamp', { ascending: false }).limit(500);
+                const { data: readings } = await supabase
+                    .from('readings')
+                    .select('location, pressure_hpa, decibel_db, timestamp, node_id, network_type, latency_ms')
+                    .order('timestamp', { ascending: false })
+                    .limit(500);
+
                 if (readings) {
                     readings.forEach(r => {
                         const pos = parseHexString(r.location);
                         if (pos) {
+                            // Color coding based on Network Type
+                            let markerColor = '#2ecc71'; // Default Green
+                            let netLabel = 'Unknown';
+                            
+                            if (r.network_type === 'WiFi') {
+                                markerColor = '#3498db'; // Blue
+                                netLabel = 'WiFi';
+                            } else if (r.network_type === 'Mobile') {
+                                markerColor = '#9b59b6'; // Purple
+                                netLabel = 'Mobile';
+                            }
+
+                            // Latency string
+                            const latencyStr = r.latency_ms ? `${r.latency_ms}ms` : '--';
+
                             L.circleMarker([pos.lat, pos.lng], {
-                                radius: 5,
-                                fillColor: '#2ecc71',
+                                radius: 6, // Slightly larger
+                                fillColor: markerColor,
                                 color: '#fff',
                                 weight: 1,
                                 fillOpacity: 0.9
-                            }).addTo(pointLayer).bindPopup(`<b>Sensor</b><br>${r.pressure_hpa.toFixed(1)} hPa`);
+                            }).addTo(pointLayer).bindPopup(`
+                                <b>Sensor Data</b><br>
+                                Pressure: ${r.pressure_hpa.toFixed(1)} hPa<br>
+                                Noise: ${r.decibel_db.toFixed(1)} dB<br>
+                                <hr style="margin:4px 0; border:0; border-top:1px solid #eee">
+                                <b>Network:</b> ${netLabel}<br>
+                                <b>Latency:</b> ${latencyStr}
+                            `);
 
                             if (typeof h3 !== 'undefined') {
                                 const getH3Index = (lat, lng, r) => typeof h3.latLngToCell === 'function' ? h3.latLngToCell(lat, lng, r) : h3.geoToH3(lat, lng, r);
