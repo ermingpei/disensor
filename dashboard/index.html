@@ -326,6 +326,13 @@
                     const latencyStr = r.latency_ms ? `${r.latency_ms}ms` : '--';
                     const shortId = r.node_id.substring(0, 6).toUpperCase();
 
+                    const isNet = currentLayer === 'network';
+                    const isNoise = currentLayer === 'noise';
+                    const isPress = currentLayer === 'pressure';
+
+                    const styleActive = 'font-weight:bold; color:#2c3e50; background:rgba(0,0,0,0.05); display:block; padding:2px 4px; border-radius:3px; margin:2px 0;';
+                    const styleNormal = 'display:block; padding:2px 4px; margin:2px 0; color:#555;';
+
                     L.circleMarker([pos.lat, pos.lng], {
                         radius: 12,
                         fillColor: markerColor,
@@ -334,18 +341,27 @@
                         opacity: 1,
                         fillOpacity: 0.9
                     }).addTo(pointLayer).bindPopup(`
-                        <div style="min-width: 150px">
-                            <h3 style="margin:0 0 5px 0; color:#333;">📱 Device: ${shortId}</h3>
-                             <div style="font-size: 0.9em; color: #666; margin-bottom: 5px;">
-                                Mode: <b>${currentLayer.toUpperCase()}</b>
+                        <div style="min-width: 160px; font-family: sans-serif;">
+                            <h3 style="margin:0 0 8px 0; color:#333; font-size:1.1em; border-bottom:1px solid #eee; padding-bottom:5px;">
+                                📱 Device: ${shortId}
+                            </h3>
+                            <div style="font-size: 0.85em; color: #888; margin-bottom: 8px;">
+                                Current View: <b>${currentLayer.toUpperCase()}</b>
                             </div>
-                            <div style="background: #f8f9fa; padding: 5px; border-radius: 4px; margin-bottom: 5px; border-left: 4px solid ${markerColor}">
-                                <b>Network:</b> ${netLabel}<br>
-                                <b>Latency:</b> ${latencyStr}<br>
-                                <b>Noise:</b> ${r.decibel_db.toFixed(1)} dB<br>
-                                <b>Pressure:</b> ${r.pressure_hpa.toFixed(0)} hPa
+                            <div style="background: #f8f9fa; padding: 8px; border-radius: 6px; margin-bottom: 8px; border-left: 5px solid ${markerColor}; font-size: 0.95em; line-height: 1.4;">
+                                <div style="${isNet ? styleActive : styleNormal}">
+                                    📡 <b>Network:</b> ${netLabel} <span style="font-size:0.9em; color:#666">(${latencyStr})</span>
+                                </div>
+                                <div style="${isNoise ? styleActive : styleNormal}">
+                                    🔊 <b>Noise:</b> ${r.decibel_db.toFixed(1)} dB
+                                </div>
+                                <div style="${isPress ? styleActive : styleNormal}">
+                                    ☁️ <b>Pressure:</b> ${r.pressure_hpa.toFixed(0)} hPa
+                                </div>
                             </div>
-                            <i style="font-size: 0.8em; color: #999">Last active: ${new Date(r.timestamp).toLocaleTimeString()}</i>
+                            <div style="text-align: right;">
+                                <i style="font-size: 0.8em; color: #aaa">Active: ${new Date(r.timestamp).toLocaleTimeString()}</i>
+                            </div>
                         </div>
                     `);
 
