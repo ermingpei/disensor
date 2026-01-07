@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 
 <head>
-  <title>下载 DiSensor - DePIN 传感器网络</title>
+  <title>下载 DiSensor - 全球数据感知网络</title>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
@@ -14,126 +14,186 @@
 
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background: linear-gradient(135deg, #0a0e27 0%, #1a1f3a 100%);
+      background: linear-gradient(135deg, #0a1128 0%, #1a237e 100%);
       min-height: 100vh;
       display: flex;
       align-items: center;
       justify-content: center;
       color: white;
+      padding: 20px;
     }
 
     .container {
+      background: rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 24px;
       text-align: center;
-      padding: 40px;
-      max-width: 500px;
+      padding: 40px 20px;
+      max-width: 450px;
+      width: 100%;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+    }
+
+    .app-icon {
+      width: 100px;
+      height: 100px;
+      border-radius: 22px;
+      margin-bottom: 15px;
+      box-shadow: 0 8px 16px rgba(0, 212, 170, 0.3);
     }
 
     .logo {
-      height: 60px;
-      margin-bottom: 20px;
-      filter: drop-shadow(0 4px 8px rgba(0, 212, 170, 0.3));
+      height: 45px;
+      margin-bottom: 10px;
     }
 
     .version {
       color: #00d4aa;
       font-size: 14px;
+      font-weight: bold;
       margin-bottom: 30px;
+      letter-spacing: 1px;
+    }
+
+    .btn-group {
+      margin: 15px 0;
     }
 
     .download-btn {
-      display: inline-block;
-      background: linear-gradient(135deg, #00d4aa 0%, #00b894 100%);
-      color: #0a0e27;
-      padding: 16px 40px;
-      border-radius: 30px;
+      display: block;
+      background: linear-gradient(135deg, #00d4aa 0%, #00b0ff 100%);
+      color: #0c1427;
+      padding: 18px;
+      border-radius: 16px;
       text-decoration: none;
       font-weight: bold;
       font-size: 18px;
-      margin: 10px;
-      transition: transform 0.2s, box-shadow 0.2s;
+      transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     }
 
     .download-btn:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 10px 30px rgba(0, 212, 170, 0.3);
+      transform: scale(1.03);
+      box-shadow: 0 0 25px rgba(0, 212, 170, 0.4);
     }
 
     .download-btn.alt {
-      background: linear-gradient(135deg, #6c5ce7 0%, #a55eea 100%);
+      background: rgba(255, 255, 255, 0.1);
+      color: white;
+      border: 1px solid rgba(255, 255, 255, 0.2);
     }
 
-    .download-btn.backup {
-      background: linear-gradient(135deg, #fdcb6e 0%, #f39c12 100%);
-      color: #1a1f3a;
+    .download-btn.alt:hover {
+      background: rgba(255, 255, 255, 0.2);
     }
 
-    .size {
+    .info-grid {
+      display: flex;
+      justify-content: space-around;
+      margin: 30px 0;
+      padding: 15px 0;
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .info-item .label {
+      font-size: 11px;
       color: #888;
-      font-size: 12px;
-      margin-top: 20px;
+      text-transform: uppercase;
+      margin-bottom: 4px;
+    }
+
+    .info-item .val {
+      font-size: 15px;
+      font-weight: bold;
+    }
+
+    .guide-card {
+      background: rgba(0, 212, 170, 0.05);
+      border-radius: 16px;
+      padding: 20px;
+      text-align: left;
+      margin-top: 30px;
+      border: 1px dashed rgba(0, 212, 170, 0.3);
+    }
+
+    .guide-card h4 {
+      color: #00d4aa;
+      font-size: 14px;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+    }
+
+    .guide-card p {
+      font-size: 13px;
+      color: #ccc;
+      line-height: 1.5;
+      margin-bottom: 8px;
     }
 
     .links {
       margin-top: 30px;
+      font-size: 13px;
     }
 
     .links a {
-      color: #00d4aa;
-      margin: 0 10px;
+      color: #888;
+      margin: 0 12px;
       text-decoration: none;
     }
 
-    .note {
-      margin-top: 30px;
-      padding: 15px;
-      background: rgba(255, 255, 255, 0.05);
-      border-radius: 10px;
-      font-size: 14px;
-      color: #aaa;
-    }
-
-    .btn-group {
-      margin: 20px 0;
+    .links a:hover {
+      color: white;
     }
   </style>
 </head>
 
 <body>
   <div class="container">
-    <img src="disensor_title.png" alt="DiSensor" class="logo">
-    <p class="version">v1.0.5 · Android</p>
+    <img src="icon.png" alt="Icon" class="app-icon">
+    <div>
+      <img src="disensor_title.png" alt="DiSensor" class="logo">
+    </div>
+    <p class="version">V1.0.5 RELEASE</p>
+
+    <div class="info-grid">
+      <div class="info-item">
+        <p class="label">大小</p>
+        <p class="val">59.9 MB</p>
+      </div>
+      <div class="info-item">
+        <p class="label">系统</p>
+        <p class="val">Android 7.0+</p>
+      </div>
+      <div class="info-item">
+        <p class="label">状态</p>
+        <p class="val">✅ 已验证</p>
+      </div>
+    </div>
 
     <div class="btn-group">
-      <!-- 国内用户：使用 GitHub 代理加速 -->
       <a class="download-btn"
         href="https://ghproxy.net/https://github.com/ermingpei/disensor/releases/download/v1.0.5/app-release.apk">
-        🚀 立即下载 (国内加速)
+        🚀 立即下载 (国内高速)
       </a>
     </div>
 
     <div class="btn-group">
-      <!-- 国际用户：直接 GitHub -->
       <a class="download-btn alt" href="https://github.com/ermingpei/disensor/releases/download/v1.0.5/app-release.apk">
-        📦 GitHub 下载
+        📦 GitHub 原生下载
       </a>
     </div>
 
-    <!-- 蓝奏云备份 - 取消注释并填入链接
-    <div class="btn-group">
-      <a class="download-btn backup" href="蓝奏云链接">
-        ☁️ 蓝奏云下载
-      </a>
-    </div>
-    -->
-
-    <p class="size">文件大小: 59.9 MB</p>
-
-    <div class="note">
-      💡 安装提示: 下载后请在手机设置中允许"安装未知来源应用"
+    <div class="guide-card">
+      <h4>💡 安装缓慢/正在扫描？</h4>
+      <p>1. <b>断网大法</b>：由于系统安全扫描需要连接服务器确认，下载后断开 WiFi/5G 再点击安装，通常可秒进。</p>
+      <p>2. <b>跳过扫描</b>：国产手机（华为/小米等）在扫描界面通常有“直接安装”或“忽略”选项。</p>
+      <p>3. <b>已知来源</b>：请确保已在设置中开启“允许安装未知来源应用”。</p>
     </div>
 
     <div class="links">
-      <a href="https://github.com/ermingpei/disensor">GitHub</a>
+      <a href="https://github.com/ermingpei/disensor">开源项目</a>
       <a href="index.html">返回首页</a>
     </div>
   </div>
