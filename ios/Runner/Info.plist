@@ -13,7 +13,7 @@
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
-	<string>sensor_sentinel</string>
+	<string>DiSensor</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
@@ -46,13 +46,13 @@
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
 	<key>NSMotionUsageDescription</key>
-	<string>We need access to the barometer to track altitude changes for ground truth data.</string>
+	<string>We need access to the barometer to track atmospheric pressure changes for hyper-local weather research.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>We need your location to tag sensor data with geographic context.</string>
+	<string>We need your location to tag environmental data with geographic context for precision mapping.</string>
 	<key>NSMicrophoneUsageDescription</key>
-	<string>We need access to the microphone to measure ambient noise levels.</string>
+	<string>We need access to the microphone to monitor urban noise levels for city planning research.</string>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
-	<string>We need background location access to map environmental data as you move, ensuring continuous contribution to the Sentinel network even when the screen is off.</string>
+	<string>We need background location access to map environmental data as you move, ensuring continuous contribution to the DiSensor network even when the screen is off.</string>
 	<key>NSLocalNetworkUsageDescription</key>
 	<string>Used for local network discovery for debugging and connecting to devices.</string>
 	<key>NSBonjourServices</key>
@@ -60,9 +60,9 @@
 		<string>_dartobservatory._tcp</string>
 	</array>
 	<key>NSBluetoothAlwaysUsageDescription</key>
-	<string>This app needs Bluetooth to scan for nearby devices to estimate crowd density.</string>
+	<string>This app needs Bluetooth to scan for nearby device density to help map crowd safety in real-time.</string>
 	<key>NSBluetoothPeripheralUsageDescription</key>
-	<string>This app needs Bluetooth to scan for nearby devices to estimate crowd density.</string>
+	<string>This app needs Bluetooth to scan for nearby device density to help map crowd safety in real-time.</string>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>location</string>
