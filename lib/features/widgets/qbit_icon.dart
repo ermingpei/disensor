@@ -14,7 +14,7 @@ class QBitIcon extends StatelessWidget {
         shape: BoxShape.circle,
         boxShadow: [
           BoxShadow(
-            color: Colors.amber.withOpacity(0.4),
+            color: Colors.amber.withValues(alpha: 0.4),
             blurRadius: 8,
             offset: Offset(0, 4),
           )

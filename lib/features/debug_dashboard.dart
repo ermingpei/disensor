@@ -11,9 +11,11 @@ import 'package:sensors_plus/sensors_plus.dart';
 
 import '../core/sensor_manager.dart';
 import '../core/app_strings.dart';
+import '../core/update_checker.dart';
 import 'hex_map_page.dart';
 import 'onboarding_page.dart';
 import 'widgets/qbit_icon.dart';
+import 'rewards_page.dart';
 
 class DebugDashboard extends StatefulWidget {
   @override
@@ -36,6 +38,8 @@ class _DebugDashboardState extends State<DebugDashboard>
     // Check clipboard after first frame to ensure we are "foreground" enough for Android 10+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _checkClipboard();
+      // Check for app updates
+      UpdateChecker.checkForUpdate(context);
     });
   }
 
@@ -123,15 +127,15 @@ class _DebugDashboardState extends State<DebugDashboard>
     final String shareText = "📱【DiSensor】\n"
         "${AppStrings.t('invite_desc')}\n"
         "👉 Code: *$code*\n"
-        "https://ermingpei.github.io/disensor/dashboard/start.html?ref=$code";
+        "https://disensor.qubitrhythm.com/dashboard/start.html?ref=$code";
 
-    Share.share(shareText);
+    SharePlus.instance.share(ShareParams(text: shareText));
   }
 
   @override
   Widget build(BuildContext context) {
-    // Cyber-Professional Palette
-    final bgColor = Color(0xFF0B1021); // Deep Midnight
+    // Cyber-Professional Palette (Slate Blue Theme)
+    final bgColor = Color(0xFF0F172A); // Slate Blue Dark
 
     return Scaffold(
       backgroundColor: bgColor,
@@ -162,7 +166,7 @@ class _DebugDashboardState extends State<DebugDashboard>
                       shadows: [
                         Shadow(
                             blurRadius: 10,
-                            color: Colors.cyanAccent.withOpacity(0.5),
+                            color: Colors.cyanAccent.withValues(alpha: 0.5),
                             offset: Offset(0, 0))
                       ]),
                 );
@@ -171,7 +175,7 @@ class _DebugDashboardState extends State<DebugDashboard>
           ],
         ),
         backgroundColor:
-            Color(0xFF0F1424).withOpacity(0.9), // Slightly lighter header
+            Color(0xFF0F1424).withValues(alpha: 0.9), // Slightly lighter header
         elevation: 0,
         centerTitle: true,
         actions: [
@@ -189,7 +193,7 @@ class _DebugDashboardState extends State<DebugDashboard>
                       leading: Icon(Icons.info, color: Colors.cyanAccent),
                       title: Text(AppStrings.t('version'),
                           style: TextStyle(color: Colors.white70)),
-                      subtitle: Text("v1.0.3",
+                      subtitle: Text("v${UpdateChecker.currentVersion}",
                           style: TextStyle(color: Colors.white54)),
                     ),
                     ListTile(
@@ -266,6 +270,33 @@ class _DebugDashboardState extends State<DebugDashboard>
               ],
             ),
           ),
+          SizedBox(height: 16),
+          Consumer<SensorManager>(
+            builder: (context, manager, _) => Row(
+              children: [
+                Expanded(
+                  child: _buildMetricCard(
+                    AppStrings.t('bluetooth'),
+                    '${manager.bluetoothDensity}',
+                    'Devs',
+                    Icons.bluetooth_audio,
+                    Colors.blueAccent,
+                    AppStrings.t('bluetooth_desc'),
+                  ),
+                ),
+                SizedBox(width: 12),
+                // Placeholder for future metric (e.g. WiFi Count)
+                Expanded(
+                  child: Container(
+                    padding: EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                        color: Colors.transparent,
+                        borderRadius: BorderRadius.circular(16)),
+                  ),
+                ),
+              ],
+            ),
+          ),
           SizedBox(height: 24),
           _buildExtraSensors(),
           SizedBox(height: 24),
@@ -288,9 +319,9 @@ class _DebugDashboardState extends State<DebugDashboard>
     return Container(
       padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
-          color: Color(0xFF151A30), // Solid Navy
+          color: Color(0xFF1E293B), // Lighter Slate
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: Colors.white.withOpacity(0.08)),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
           boxShadow: [
             BoxShadow(
                 color: Colors.black26, blurRadius: 8, offset: Offset(0, 2))
@@ -300,7 +331,7 @@ class _DebugDashboardState extends State<DebugDashboard>
         children: [
           Text("DEVICE SENSORS",
               style: TextStyle(
-                  color: Colors.cyanAccent.withOpacity(0.7),
+                  color: Colors.cyanAccent.withValues(alpha: 0.7),
                   fontSize: 11,
                   fontWeight: FontWeight.bold,
                   letterSpacing: 1.2)),
@@ -343,7 +374,7 @@ class _DebugDashboardState extends State<DebugDashboard>
       decoration: BoxDecoration(
           color: Color(0xFF1F2640),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: color.withOpacity(0.3))),
+          border: Border.all(color: color.withValues(alpha: 0.3))),
       child: Row(
         children: [
           Icon(icon, color: color, size: 16),
@@ -377,7 +408,7 @@ class _DebugDashboardState extends State<DebugDashboard>
             BoxShadow(
                 color: Colors.black38, blurRadius: 15, offset: Offset(0, 8)),
           ],
-          border: Border.all(color: Colors.white.withOpacity(0.1)),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
         ),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(24),
@@ -400,7 +431,8 @@ class _DebugDashboardState extends State<DebugDashboard>
                     tileBuilder: (context, widget, tile) {
                       return ColorFiltered(
                         colorFilter: ColorFilter.mode(
-                          Colors.black.withOpacity(0.3), // Reduced from 0.6
+                          Colors.black
+                              .withValues(alpha: 0.3), // Reduced from 0.6
                           BlendMode.darken,
                         ),
                         child: widget,
@@ -417,7 +449,7 @@ class _DebugDashboardState extends State<DebugDashboard>
                         end: Alignment.bottomCenter,
                         colors: [
                       Colors.transparent,
-                      Colors.black.withOpacity(0.6), // Reduced from 0.8
+                      Colors.black.withValues(alpha: 0.6), // Reduced from 0.8
                     ])),
               ),
               Padding(
@@ -451,10 +483,10 @@ class _DebugDashboardState extends State<DebugDashboard>
                 child: Container(
                   padding: EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
-                    color: Color(0xFF0B1021).withOpacity(0.8),
+                    color: Color(0xFF0B1021).withValues(alpha: 0.8),
                     borderRadius: BorderRadius.circular(12),
-                    border:
-                        Border.all(color: Colors.cyanAccent.withOpacity(0.5)),
+                    border: Border.all(
+                        color: Colors.cyanAccent.withValues(alpha: 0.5)),
                   ),
                   child: Text("LIVE VIEW",
                       style: TextStyle(
@@ -502,9 +534,9 @@ class _DebugDashboardState extends State<DebugDashboard>
             gradient: LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
-                colors: [Color(0xFF151A30), Color(0xFF1F2640)]),
+                colors: [Color(0xFF334155), Color(0xFF1E293B)]),
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: color.withOpacity(0.3)),
+            border: Border.all(color: color.withValues(alpha: 0.3)),
             boxShadow: [
               BoxShadow(
                   color: Colors.black26, blurRadius: 4, offset: Offset(0, 2))
@@ -550,18 +582,18 @@ class _DebugDashboardState extends State<DebugDashboard>
             end: Alignment.bottomRight,
             colors: isSampling
                 ? [Color(0xFF1A2B2F), Color(0xFF0F1424)] // Slight greenish tint
-                : [Color(0xFF151A30), Color(0xFF1F2640)]),
+                : [Color(0xFF334155), Color(0xFF1E293B)]),
         borderRadius: BorderRadius.circular(28),
         border: Border.all(
             color: isSampling
-                ? Colors.greenAccent.withOpacity(0.3)
+                ? Colors.greenAccent.withValues(alpha: 0.3)
                 : Colors.white10),
         boxShadow: [
           BoxShadow(
               color: Colors.black38, blurRadius: 15, offset: Offset(0, 8)),
           if (isSampling)
             BoxShadow(
-                color: Colors.greenAccent.withOpacity(0.1),
+                color: Colors.greenAccent.withValues(alpha: 0.1),
                 blurRadius: 20,
                 spreadRadius: -5),
         ],
@@ -585,18 +617,30 @@ class _DebugDashboardState extends State<DebugDashboard>
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
-                        // New Icon
-                        _buildQBitCoin(),
-                        SizedBox(width: 12),
-                        // Number
-                        Flexible(
-                          child: Text(
-                            manager.totalEarnings.toStringAsFixed(2),
-                            style: TextStyle(
-                                fontSize: 32,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                                fontFamily: 'monospace'),
+                        // Interactable QBit
+                        InkWell(
+                          onTap: () {
+                            Navigator.of(context).push(MaterialPageRoute(
+                                builder: (_) => const RewardsPage()));
+                          },
+                          borderRadius: BorderRadius.circular(30),
+                          child: Row(
+                            children: [
+                              _buildQBitCoin(),
+                              SizedBox(width: 12),
+                              // Number
+                              Text(
+                                manager.totalEarnings.toStringAsFixed(2),
+                                style: TextStyle(
+                                    fontSize: 32,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.white,
+                                    fontFamily: 'monospace'),
+                              ),
+                              SizedBox(width: 8),
+                              Icon(Icons.arrow_forward_ios,
+                                  size: 14, color: Colors.amber),
+                            ],
                           ),
                         ),
                       ],
@@ -745,9 +789,9 @@ class _DebugDashboardState extends State<DebugDashboard>
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.2),
+        color: color.withValues(alpha: 0.2),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: color.withOpacity(0.5)),
+        border: Border.all(color: color.withValues(alpha: 0.5)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -852,8 +896,7 @@ class _DebugDashboardState extends State<DebugDashboard>
       await prefs.setString('inviter_code', code);
 
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(AppStrings.t('invite_activated') ??
-              "Invite Activated! Boost applied. 🚀"),
+          content: Text(AppStrings.t('invite_activated')),
           backgroundColor: Colors.green));
     } else {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
@@ -881,7 +924,7 @@ class _DebugDashboardState extends State<DebugDashboard>
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-              color: Color(0xFF6C63FF).withOpacity(0.4),
+              color: Color(0xFF6C63FF).withValues(alpha: 0.4),
               blurRadius: 15,
               offset: Offset(0, 8)),
         ],
@@ -921,7 +964,7 @@ class _DebugDashboardState extends State<DebugDashboard>
                       padding:
                           EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.2),
+                        color: Colors.white.withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(16),
                       ),
                       child: Column(
@@ -985,7 +1028,7 @@ class _DebugDashboardState extends State<DebugDashboard>
                 colors: [Color(0xFFFFD700), Color(0xFFB8860B)]),
             boxShadow: [
               BoxShadow(
-                  color: Colors.amber.withOpacity(0.4),
+                  color: Colors.amber.withValues(alpha: 0.4),
                   blurRadius: 15,
                   spreadRadius: 2)
             ]),
@@ -1008,7 +1051,7 @@ class _DebugDashboardState extends State<DebugDashboard>
             Text(
               "${AppStrings.t('referred_by')} ${manager.inviterId}",
               style: TextStyle(
-                  color: Colors.white.withOpacity(0.9),
+                  color: Colors.white.withValues(alpha: 0.9),
                   fontSize: 12,
                   fontWeight: FontWeight.bold),
             ),
@@ -1046,7 +1089,7 @@ class _DebugDashboardState extends State<DebugDashboard>
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.05),
+        color: Colors.white.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: Colors.white10),
       ),

@@ -100,7 +100,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
                 Text(
                   AppStrings.t('powered_by') + " Qubit Rhythm",
                   style: TextStyle(
-                      color: Colors.cyanAccent.withOpacity(0.5),
+                      color: Colors.cyanAccent.withValues(alpha: 0.5),
                       fontSize: 10,
                       fontWeight: FontWeight.bold,
                       letterSpacing: 1.0),
@@ -183,7 +183,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
                     width: double.infinity,
                     decoration: BoxDecoration(boxShadow: [
                       BoxShadow(
-                          color: Colors.cyanAccent.withOpacity(0.3),
+                          color: Colors.cyanAccent.withValues(alpha: 0.3),
                           blurRadius: 20,
                           offset: Offset(0, 5))
                     ]),

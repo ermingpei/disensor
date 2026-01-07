@@ -6,6 +6,8 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:geolocator/geolocator.dart';
 import '../core/sensor_manager.dart';
+import 'rewards_page.dart';
+import '../core/app_strings.dart';
 
 class HexMapPage extends StatefulWidget {
   @override
@@ -57,8 +59,11 @@ class _HexMapPageState extends State<HexMapPage> {
       }
 
       // 2. Get Location
-      Position pos = await Geolocator.getCurrentPosition(
-          desiredAccuracy: LocationAccuracy.high);
+      final settings = LocationSettings(
+        accuracy: LocationAccuracy.high,
+      );
+      Position pos =
+          await Geolocator.getCurrentPosition(locationSettings: settings);
 
       if (mounted) {
         setState(() {
@@ -89,9 +94,9 @@ class _HexMapPageState extends State<HexMapPage> {
         Color color;
         bool isMine = (x == 0 && y == 0);
         if (isMine) {
-          color = Colors.green.withOpacity(0.5); // Current
+          color = Colors.green.withValues(alpha: 0.5); // Current
         } else if (rng.nextBool()) {
-          color = Colors.blue.withOpacity(0.3); // Covered
+          color = Colors.blue.withValues(alpha: 0.3); // Covered
         } else {
           color = Colors.transparent; // Empty
         }
@@ -101,7 +106,7 @@ class _HexMapPageState extends State<HexMapPage> {
             Polygon(
               points: _createHexPoints(center, 0.0028),
               color: color,
-              borderColor: Colors.white.withOpacity(0.5),
+              borderColor: Colors.white.withValues(alpha: 0.5),
               borderStrokeWidth: 1,
             ),
           );
@@ -127,7 +132,7 @@ class _HexMapPageState extends State<HexMapPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text("Coverage Map")),
+      appBar: AppBar(title: Text(AppStrings.t('coverage_map'))),
       body: Consumer<SensorManager>(
         builder: (context, manager, child) {
           final displayLocation =
@@ -148,7 +153,7 @@ class _HexMapPageState extends State<HexMapPage> {
                   child: Container(
                     padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.95),
+                      color: Colors.white.withValues(alpha: 0.95),
                       borderRadius: BorderRadius.circular(30),
                       boxShadow: [
                         BoxShadow(color: Colors.black12, blurRadius: 4)
@@ -160,20 +165,22 @@ class _HexMapPageState extends State<HexMapPage> {
                         Flexible(
                           child: _buildInteractiveLegend(
                               Colors.green,
-                              "My Mining",
-                              "You are actively contributing here."),
+                              AppStrings.t('legend_my_mining'),
+                              AppStrings.t('legend_my_mining_desc')),
                         ),
                         SizedBox(width: 4),
                         Flexible(
                           child: _buildInteractiveLegend(
-                              Colors.blue.withOpacity(0.5),
-                              "Covered",
-                              "Already mapped by others. Low reward."),
+                              Colors.blue.withValues(alpha: 0.5),
+                              AppStrings.t('legend_covered'),
+                              AppStrings.t('legend_covered_desc')),
                         ),
                         SizedBox(width: 4),
                         Flexible(
-                          child: _buildInteractiveLegend(Colors.transparent,
-                              "Empty", "Unexplored! High reward zone.",
+                          child: _buildInteractiveLegend(
+                              Colors.transparent,
+                              AppStrings.t('legend_empty'),
+                              AppStrings.t('legend_empty_desc'),
                               borderColor: Colors.grey),
                         ),
                       ],
@@ -230,7 +237,7 @@ class _HexMapPageState extends State<HexMapPage> {
                                       color: Colors.grey),
                                   SizedBox(width: 8),
                                   Expanded(
-                                    child: Text("Mission: Expand Network",
+                                    child: Text(AppStrings.t('mission_title'),
                                         maxLines: 1,
                                         overflow: TextOverflow.ellipsis,
                                         style: TextStyle(
@@ -239,7 +246,7 @@ class _HexMapPageState extends State<HexMapPage> {
                                   ),
                                   if (!_isMissionExpanded)
                                     Flexible(
-                                      child: Text("Tap to view",
+                                      child: Text(AppStrings.t('tap_to_view'),
                                           maxLines: 1,
                                           overflow: TextOverflow.fade,
                                           softWrap: false,
@@ -260,23 +267,24 @@ class _HexMapPageState extends State<HexMapPage> {
                                     Divider(),
                                     _buildMissionRow(
                                         Colors.transparent,
-                                        "Empty Hex",
-                                        "High Yield (10x Reward)",
+                                        AppStrings.t('mission_empty_hex'),
+                                        AppStrings.t('mission_high_yield'),
                                         Colors.grey),
                                     _buildMissionRow(
-                                        Colors.blue.withOpacity(0.3),
-                                        "Covered Hex",
-                                        "Low Yield (1x Reward)",
+                                        Colors.blue.withValues(alpha: 0.3),
+                                        AppStrings.t('mission_covered_hex'),
+                                        AppStrings.t('mission_low_yield'),
                                         null),
                                     SizedBox(height: 12),
                                     Container(
                                       padding: EdgeInsets.all(12),
                                       decoration: BoxDecoration(
-                                        color: Colors.orange.withOpacity(0.1),
+                                        color: Colors.orange
+                                            .withValues(alpha: 0.1),
                                         borderRadius: BorderRadius.circular(8),
                                         border: Border.all(
-                                            color:
-                                                Colors.orange.withOpacity(0.3)),
+                                            color: Colors.orange
+                                                .withValues(alpha: 0.3)),
                                       ),
                                       child: Row(
                                         children: [
@@ -286,7 +294,8 @@ class _HexMapPageState extends State<HexMapPage> {
                                           SizedBox(width: 10),
                                           Expanded(
                                               child: Text(
-                                                  "Action: Go to an Empty Hex via walking/biking and stay for 5+ min.",
+                                                  AppStrings.t(
+                                                      'mission_action_desc'),
                                                   maxLines: 3,
                                                   overflow:
                                                       TextOverflow.ellipsis,
@@ -314,6 +323,16 @@ class _HexMapPageState extends State<HexMapPage> {
                   right: 20,
                   child: Column(
                     children: [
+                      FloatingActionButton(
+                        heroTag: "rewards_fab",
+                        backgroundColor: Colors.amber,
+                        child: const Icon(Icons.stars, color: Colors.black),
+                        onPressed: () {
+                          Navigator.of(context).push(MaterialPageRoute(
+                              builder: (_) => const RewardsPage()));
+                        },
+                      ),
+                      const SizedBox(height: 10),
                       FloatingActionButton(
                         heroTag: "zoom_in",
                         mini: true,
@@ -343,9 +362,7 @@ class _HexMapPageState extends State<HexMapPage> {
                         backgroundColor: Colors.blue,
                         child: Icon(Icons.my_location, color: Colors.white),
                         onPressed: () {
-                          if (displayLocation != null) {
-                            _mapController.move(displayLocation, 15.0);
-                          }
+                          _mapController.move(displayLocation, 15.0);
                         },
                       ),
                     ],
@@ -409,22 +426,22 @@ class _HexMapPageState extends State<HexMapPage> {
           children: [
             Icon(Icons.location_off, size: 60, color: Colors.grey),
             SizedBox(height: 16),
-            Text("Location Access Needed",
+            Text(AppStrings.t('loc_access_needed'),
                 style: TextStyle(color: Colors.white, fontSize: 18)),
             SizedBox(height: 8),
-            Text("We need location to show the coverage map.",
+            Text(AppStrings.t('loc_access_desc'),
                 style: TextStyle(color: Colors.grey)),
             SizedBox(height: 24),
             TextButton(
               onPressed: () => Geolocator.openAppSettings(),
-              child: Text("Open Settings",
+              child: Text(AppStrings.t('open_settings'),
                   style: TextStyle(color: Colors.blueAccent)),
             ),
             SizedBox(height: 12),
             ElevatedButton(
               onPressed: _locateUser,
               style: ElevatedButton.styleFrom(backgroundColor: Colors.blue),
-              child: Text("Retry Permission",
+              child: Text(AppStrings.t('retry_permission'),
                   style: TextStyle(color: Colors.white)),
             )
           ],

@@ -7,27 +7,20 @@ IPHONE_12_ID="00008101-001854C61105001E"
 # 2. iPhone XII (新)
 IPHONE_XII_ID="00008101-000A60A60E11001E"
 
-# 3. Samsung (无线 IP)
-SAMSUNG_IP="192.168.1.152:5555"
+# 3. iPhone 14 (Weiting)
+IPHONE_14_ID="00008110-000230560252801E"
 
-echo "📱 Sentinel Fleet Commander v2.0 🚀"
+# 4. Samsung (使用 TLS 连接)
+SAMSUNG_ID="adb-R9WT70JXLGK-6lPYEo._adb-tls-connect._tcp"
+
+echo "📱 Sentinel Fleet Commander v2.1 🚀"
 echo "================================="
-
-# --- 检查 Android 连接 ---
-echo "🔍 Checking Samsung connection..."
-ADB_DEVICES=$(adb devices | grep "$SAMSUNG_IP")
-if [ -z "$ADB_DEVICES" ]; then
-    echo "⚠️ Samsung wireless connection lost. Attempting to reconnect..."
-    adb connect $SAMSUNG_IP
-else
-    echo "✅ Samsung connected ($SAMSUNG_IP)"
-fi
 
 # --- 启动所有 Agent ---
 
 # 1. Samsung
 echo "🚀 Launching Samsung Agent..."
-osascript -e "tell application \"Terminal\" to do script \"cd $(pwd) && echo '📱 SAMSUNG AGENT' && flutter run -d $SAMSUNG_IP\""
+osascript -e "tell application \"Terminal\" to do script \"cd $(pwd) && echo '📱 SAMSUNG AGENT' && flutter run -d $SAMSUNG_ID\""
 
 # 2. iPhone 12
 echo "🚀 Launching iPhone 12 Agent..."
@@ -37,6 +30,10 @@ osascript -e "tell application \"Terminal\" to do script \"cd $(pwd) && echo '�
 echo "🚀 Launching iPhone XII Agent..."
 osascript -e "tell application \"Terminal\" to do script \"cd $(pwd) && echo '🍏 iPHONE XII AGENT' && flutter run -d $IPHONE_XII_ID\""
 
+# 4. iPhone 14
+echo "🚀 Launching iPhone 14 Agent..."
+osascript -e "tell application \"Terminal\" to do script \"cd $(pwd) && echo '🍏 iPHONE 14 AGENT' && flutter run -d $IPHONE_14_ID\""
+
 echo "================================="
-echo "✅ Deployment commands sent to 3 devices!"
+echo "✅ Deployment commands sent to 4 devices!"
 echo "👉 Check the emerging terminal windows."

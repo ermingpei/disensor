@@ -1,0 +1,21 @@
+
+# Project Rules
+
+## File Organization
+
+### Markdown Documentation
+Always place new markdown (`.md`) files in the appropriate subdirectory within `docs/` to keep the root directory clean.
+
+- **Planning & Strategy** -> `docs/planning/`
+  - Examples: Feature plans, roadmaps, marketing strategies.
+- **Troubleshooting & Debugging** -> `docs/troubleshooting/`
+  - Examples: Fix logs, error investigations, debugging guides.
+- **Guides & How-To** -> `docs/guides/`
+  - Examples: Setup guides, device management, operational manuals.
+- **Miscellaneous** -> `docs/misc/`
+  - Examples: Daily logs (`TODAY.md`), temporal notes.
+
+**Do not create new `.md` files in the root directory**, except for `README.md`.
+
+### General
+- When creating new files, always check if a suitable subdirectory exists.

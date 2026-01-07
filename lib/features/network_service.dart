@@ -41,9 +41,8 @@ class NetworkService {
   Future<int> measureLatency() async {
     final stopwatch = Stopwatch()..start();
     try {
-      // 1.1.1.1 is Cloudflare's DNS, usually very fast and reliable.
-      // We use HEAD to minimize data usage.
-      final response = await http.head(Uri.parse('https://1.1.1.1'));
+      // 1.1.1.1 can be spotty in China. Microsoft's captive portal check is robust globally.
+      final response = await http.head(Uri.parse('https://www.microsoft.com'));
       stopwatch.stop();
       if (response.statusCode == 200) {
         return stopwatch.elapsedMilliseconds;
