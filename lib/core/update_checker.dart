@@ -19,7 +19,7 @@ class UpdateChecker {
 
   // China-friendly download (Qubit Rhythm website)
   static const String _chinaDownloadUrl =
-      'https://disensor.qubitrhythm.com/download';
+      'https://disensor.qubitrhythm.com/dashboard/download.html';
 
   /// Check if device is likely in China
   static bool get _isChineseLocale {

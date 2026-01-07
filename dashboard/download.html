@@ -29,13 +29,9 @@
     }
 
     .logo {
-      font-size: 48px;
+      height: 60px;
       margin-bottom: 20px;
-    }
-
-    h1 {
-      font-size: 28px;
-      margin-bottom: 10px;
+      filter: drop-shadow(0 4px 8px rgba(0, 212, 170, 0.3));
     }
 
     .version {
@@ -66,6 +62,11 @@
       background: linear-gradient(135deg, #6c5ce7 0%, #a55eea 100%);
     }
 
+    .download-btn.backup {
+      background: linear-gradient(135deg, #fdcb6e 0%, #f39c12 100%);
+      color: #1a1f3a;
+    }
+
     .size {
       color: #888;
       font-size: 12px;
@@ -90,25 +91,40 @@
       font-size: 14px;
       color: #aaa;
     }
+
+    .btn-group {
+      margin: 20px 0;
+    }
   </style>
 </head>
 
 <body>
   <div class="container">
-    <div class="logo">📡</div>
-    <h1>DiSensor</h1>
+    <img src="disensor_title.png" alt="DiSensor" class="logo">
     <p class="version">v1.0.4 · Android</p>
 
-    <!-- 国内用户：使用 GitHub 代理加速 -->
-    <a class="download-btn"
-      href="https://ghproxy.net/https://github.com/ermingpei/disensor/releases/download/v1.0.4/app-release.apk">
-      🚀 立即下载 (国内加速)
-    </a>
+    <div class="btn-group">
+      <!-- 国内用户：使用 GitHub 代理加速 -->
+      <a class="download-btn"
+        href="https://ghproxy.net/https://github.com/ermingpei/disensor/releases/download/v1.0.4/app-release.apk">
+        🚀 立即下载 (国内加速)
+      </a>
+    </div>
 
-    <!-- 国际用户：直接 GitHub -->
-    <a class="download-btn alt" href="https://github.com/ermingpei/disensor/releases/download/v1.0.4/app-release.apk">
-      📦 GitHub 下载
-    </a>
+    <div class="btn-group">
+      <!-- 国际用户：直接 GitHub -->
+      <a class="download-btn alt" href="https://github.com/ermingpei/disensor/releases/download/v1.0.4/app-release.apk">
+        📦 GitHub 下载
+      </a>
+    </div>
+
+    <!-- 蓝奏云备份 - 取消注释并填入链接
+    <div class="btn-group">
+      <a class="download-btn backup" href="蓝奏云链接">
+        ☁️ 蓝奏云下载
+      </a>
+    </div>
+    -->
 
     <p class="size">文件大小: 59.9 MB</p>
 
@@ -118,7 +134,7 @@
 
     <div class="links">
       <a href="https://github.com/ermingpei/disensor">GitHub</a>
-      <a href="/">返回首页</a>
+      <a href="index.html">返回首页</a>
     </div>
   </div>
 </body>
