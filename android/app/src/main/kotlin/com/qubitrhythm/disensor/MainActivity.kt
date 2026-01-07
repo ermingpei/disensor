@@ -1,4 +1,4 @@
-package com.example.sensor_sentinel
+package com.qubitrhythm.disensor
 
 import android.content.Context
 import android.os.Build

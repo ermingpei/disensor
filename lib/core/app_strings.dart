@@ -45,11 +45,11 @@ class AppStrings {
       'interactive': 'Interactive',
       'invite_earn': 'Join the Global Sensing Network',
       'invite_desc':
-          '🏙 Contribute sensor data for global research and earn QBIT rewards effortlessly.',
+          '🏙 Contribute sensor data for global research and earn QBit rewards effortlessly.',
       'share_subject':
           '📱 DiSensor Network - A groundbreaking global data sensing community',
       'share_body':
-          '📱 Did you know your phone is packed with sensors like barometers and microphones, yet they sit idle 99% of the time?\n\nDiSensor transforms these untapped resources into vital scientific value, and provides rewards for your contribution:\n\n🔬 Scientific Impact: Help build a high-precision global environmental map.\n⏰ Effortless: Runs automatically in the background without interruption.\n🎁 Future Rewards: Earn QBIT tokens and share in the network\'s growth.\n\n👉 Referral Code: *#CODE#*\nhttps://disensor.qubitrhythm.com/dashboard/start.html?ref=#CODE#',
+          '📱 Did you know your phone is packed with sensors like barometers and microphones, yet they sit idle 99% of the time?\n\nDiSensor transforms these untapped resources into vital scientific value, and provides rewards for your contribution:\n\n🔬 Scientific Impact: Help build a high-precision global environmental map.\n⏰ Effortless Running: Runs automatically in the background without interruption.\n🎁 Future Rewards: Earn 💰QBit tokens and share in the network\'s growth.\n\n👉 Referral Code: *#CODE#*\nhttps://disensor.qubitrhythm.com/dashboard/start.html?ref=#CODE#',
       'share_link': 'Share & Join Together',
       'boost_active': 'BOOST ACTIVE',
       'referred_by': 'Referred by:',
@@ -67,9 +67,9 @@ class AppStrings {
       'noise_desc': 'Ambient noise level monitoring.',
       'bluetooth': 'Bluetooth Density',
       'bluetooth_desc': 'Active devices nearby. Indicates crowd density.',
-      'about_qbit': 'About QBIT Rewards',
+      'about_qbit': 'About QBit Rewards',
       'about_qbit_content':
-          'QBIT is the native incentive token of the DiSensor network.\n\nYou earn QBIT by contributing valuable environmental data (Pressure, Noise, Signal Density, etc.). This data is essential for building a high-precision global environmental map. QBIT represents your stake in the early growth of the network, with future value emerging as the data ecosystem and industry applications expand.\n\nEarning Rate: Base Contribution + Exploration Bonus.',
+          'QBit is the native incentive token of the DiSensor network.\n\nYou earn QBit by contributing valuable environmental data (Pressure, Noise, Signal Density, etc.). This data is essential for building a high-precision global environmental map. QBit represents your stake in the early growth of the network, with future value emerging as the data ecosystem and industry applications expand.\n\nEarning Rate: Base Contribution + Exploration Bonus.',
       'got_it': 'GOT IT',
       'onboard_1_title': 'Hyper-local Sensing',
       'onboard_1_body':
@@ -79,7 +79,7 @@ class AppStrings {
           'Map air pressure, noise, and network signals. Your data helps scientists forecast weather, study urban heat islands, and improve city safety.',
       'onboard_3_title': 'Potential Rewards',
       'onboard_3_body':
-          'Turn your data into value. Every contribution earns QBIT tokens, which represent potential future rewards and network equity.',
+          'Turn your data into value. Every contribution earns💰QBit tokens, which represent potential future rewards and network equity.',
       'enter_network': 'ENTER NETWORK',
       'next': 'NEXT',
       'slogan': 'Measuring the World\'s Pulse',
@@ -115,8 +115,8 @@ class AppStrings {
       'reset_in': 'RESET IN',
       'lucky_draw_title': 'LUCKY DRAW',
       'lucky_draw_desc':
-          'Burn 10 QBIT for a chance to win a \$50 Gift Card immediately.',
-      'try_luck_btn': 'TRY LUCK (-10 QBIT)',
+          'Burn 10 QBit for a chance to win a \$50 Gift Card immediately.',
+      'try_luck_btn': 'TRY LUCK (-10 QBit)',
       'spinning': 'SPINNING...',
       'instant_redemption': 'INSTANT REDEMPTION',
       'become_prime': 'BECOME A DISENSOR PRIME PARTNER',
@@ -129,11 +129,11 @@ class AppStrings {
       'cancel': 'CANCEL',
       'daily_limit_reached':
           '⚠️ Daily Limit Reached. Please try tomorrow or use Lucky Draw!',
-      'insufficient_qbit': '⚠️ Not enough QBIT! Earn more by mapping areas.',
+      'insufficient_qbit': '⚠️ Not enough QBit! Earn more by mapping areas.',
       'jackpot_win':
           '🎉 JACKPOT! You won a \$50 Gift Card!\n\nEmail us with code: ',
       'jackpot_lose':
-          'So close! You won 0.1 QBIT consolation prize.\n\nKeep trying, the jackpot is waiting!',
+          'So close! You won 0.1 QBit consolation prize.\n\nKeep trying, the jackpot is waiting!',
       'item': 'Item:',
       'cost': 'Cost:',
       'prime_status': 'DiSensor Prime',
@@ -174,10 +174,10 @@ class AppStrings {
       'map_desc': '探索高收益区域\n优化您的挖矿路线',
       'interactive': '交互式',
       'invite_earn': '加入全球感知网络',
-      'invite_desc': '🏙 采集气压、噪音等数据助力全球科研，零感运行并赚取 QBIT 收益。',
+      'invite_desc': '🏙 采集气压、噪音等数据助力全球科研，零感运行并赚取 QBit 收益。',
       'share_subject': '� DiSensor Network - 一个开创性的全球数据感知社区',
       'share_body':
-          '📱 您是否知道，您的手机内置了多种传感器，但它们 99% 的时间都在闲置？\n\nDiSensor 将这些沉睡的资源转化为珍贵的科研价值，并且为您回馈收益：\n\n🔬 贡献科研：协助构建全球精细化环境图谱\n⏰ 零感参与：全自动运行，不影响日常使用\n🎁 潜在收益：获得 QBIT 奖励，分享网络成长红利\n\n👉 邀请码：*#CODE#*\nhttps://disensor.qubitrhythm.com/dashboard/start.html?ref=#CODE#',
+          '📱 您是否知道，您的手机内置了多种传感器，但它们绝大部分时间都在闲置？\n\nDiSensor将这些沉睡的资源转化为珍贵的科研价值，并且为您回馈收益：\n\n🔬 贡献科研：协助构建全球精细化环境图谱\n⏰ 零感参与：全自动运行，不影响日常使用\n🎁 潜在收益：获得💰QBit奖励，未来分享非凡收益\n\n👉 邀请码：*#CODE#*\nhttps://disensor.qubitrhythm.com/dashboard/start.html?ref=#CODE#',
       'share_link': '邀请好友加入',
       'boost_active': '加成已激活',
       'referred_by': '推荐人：',
@@ -195,9 +195,9 @@ class AppStrings {
       'noise_desc': '环境噪音监测有助于城市噪音污染地图绘制。',
       'bluetooth': '蓝牙密度',
       'bluetooth_desc': '附近的蓝牙设备数量。用于估算人群密度。',
-      'about_qbit': '关于 QBIT 奖励',
+      'about_qbit': '关于QBit奖励',
       'about_qbit_content':
-          'QBIT 是 DiSensor 网络的原生激励代币。\n\n您通过贡献宝贵的环境感知数据（如气压、噪音、信号密度等）来获得 QBIT。这些数据是构建全球精细化环境图谱的核心。QBIT 代表了您在网络早期建设中的贡献权益，其未来价值将随着数据生态的丰富和行业应用而不断显现。\n\n获取效率：基础贡献 + 实时探索加成。',
+          'QBit是 DiSensor 网络的原生激励代币。\n\n您通过贡献宝贵的环境感知数据（如气压、噪音、信号密度等）来获得QBit。这些数据是构建全球精细化环境图谱的核心。QBit代表了您在网络早期建设中的贡献权益，其未来价值将随着数据生态的丰富和行业应用而不断显现。\n\n获取效率：基础贡献 + 实时探索加成。',
       'got_it': '知道了',
       'onboard_1_title': '个体精细化感知',
       'onboard_1_body': '加入新型全球分布式数据感知网络。让您的手机变身一台随时随地的科学探测仪器。',
@@ -205,7 +205,7 @@ class AppStrings {
       'onboard_2_body':
           '绘制您所在地区的气压、噪音、网络信号地图。用超精细本地数据帮助科学家预测天气、研究城市热岛效应或优化公共交通。',
       'onboard_3_title': '潜在非凡收益',
-      'onboard_3_body': '将您的数据转化为价值。每一份数据都在为您赚取 QBIT 币，并在将来可能转化为实际收益。',
+      'onboard_3_body': '将您的数据转化为价值。每一份数据都在为您赚取QBit币，并在将来可能转化为实际收益。',
       'enter_network': '进入网络',
       'next': '下一步',
       'slogan': '测量世界的脉动',
@@ -239,8 +239,8 @@ class AppStrings {
       'claimed': '已抢光',
       'reset_in': '重置倒计时',
       'lucky_draw_title': '幸运抽奖',
-      'lucky_draw_desc': '消耗 10 QBIT 试手气，有机会立赢 \$50 礼品卡。',
-      'try_luck_btn': '试手气 (-10 QBIT)',
+      'lucky_draw_desc': '消耗 10 QBit 试手气，有机会立赢 \$50 礼品卡。',
+      'try_luck_btn': '试手气 (-10 QBit)',
       'spinning': '抽奖中...',
       'instant_redemption': '即时兑换',
       'become_prime': '成为 DiSensor Prime 合伙人',
@@ -253,7 +253,7 @@ class AppStrings {
       'daily_limit_reached': '⚠️ 今日额度已抢完。请明天更早来，或尝试手气！',
       'insufficient_qbit': '⚠️ 余额不足！去地图上探索更多区域吧。',
       'jackpot_win': '🎉 中大奖啦！你赢得了 \$50 礼品卡！\n\n请将以下代码发送至我们的邮箱: ',
-      'jackpot_lose': '差一点点！获得 0.1 QBIT 安慰奖。\n\n别灰心，大奖还在等你！',
+      'jackpot_lose': '差一点点！获得 0.1 QBit安慰奖。\n\n别灰心，大奖还在等你！',
       'item': '商品:',
       'cost': '消耗:',
       'prime_status': 'DiSensor Prime',

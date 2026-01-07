@@ -154,7 +154,7 @@ class SensorManager extends ChangeNotifier {
   }
 
   double _totalEarnings = 0.0;
-  double _miningRate = 1.0; // Base QBIT per valid data upload
+  double _miningRate = 1.0; // Base QBit per valid data upload
   final Set<String> _visitedHexes = {}; // Tracks coverage in current session
 
   double get totalEarnings => _totalEarnings;

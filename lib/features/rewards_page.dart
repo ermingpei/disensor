@@ -411,7 +411,7 @@ class _RewardsPageState extends State<RewardsPage>
                         fontWeight: FontWeight.bold,
                         fontSize: 15)),
                 SizedBox(height: 4),
-                Text("$cost QBIT",
+                Text("$cost QBit",
                     style:
                         TextStyle(color: Colors.blueGrey[300], fontSize: 12)),
               ],
@@ -504,7 +504,7 @@ class _RewardsPageState extends State<RewardsPage>
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-                "${AppStrings.t('item')} $item\n${AppStrings.t('cost')} $cost QBIT",
+                "${AppStrings.t('item')} $item\n${AppStrings.t('cost')} $cost QBit",
                 style: TextStyle(color: Colors.white70)),
             SizedBox(height: 16),
             TextField(

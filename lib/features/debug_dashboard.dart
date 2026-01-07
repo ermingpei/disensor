@@ -677,7 +677,7 @@ class _DebugDashboardState extends State<DebugDashboard>
                 children: [
                   Icon(Icons.flash_on, color: Colors.orangeAccent, size: 16),
                   SizedBox(width: 4),
-                  Text('${manager.miningRate.toStringAsFixed(1)} QBIT/hr',
+                  Text('${manager.miningRate.toStringAsFixed(1)} QBit/hr',
                       style: TextStyle(color: Colors.grey, fontSize: 12)),
                 ],
               ),
