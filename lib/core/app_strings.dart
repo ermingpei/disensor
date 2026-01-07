@@ -45,7 +45,11 @@ class AppStrings {
       'interactive': 'Interactive',
       'invite_earn': 'Join the Global Sensing Network',
       'invite_desc':
-          '📡 Welcome to the DiSensor Network — a groundbreaking global data sensing community!\n\nDid you know your phone is packed with sensors like barometers, microphones, and GPS, yet they sit idle 99% of the time?\n\nDiSensor transforms these untapped resources into vital scientific value, and provides rewards for your contribution:\n\n🏙 Mapping air pressure for hyper-local weather forecasting\n🔊 Monitoring noise pollution for smarter urban planning\n👥 Analyzing signal density for real-time crowd safety heatmaps\n\n🔬 Scientific Contribution: Help researchers build the world\'s most granular environmental dataset.\n⏰ Effortless Participation: Runs automatically in the background without interrupting your day.\n🎁 Future Potential: Earn QBIT tokens and share in the growth of a global network.\n\nJoin the movement today as a DiSensor Pioneer! Use my code for a +20% boost!',
+          '🏙 Contribute sensor data for global research and earn QBIT rewards effortlessly.',
+      'share_subject':
+          '📱 DiSensor Network - A groundbreaking global data sensing community',
+      'share_body':
+          '📱 Did you know your phone is packed with sensors like barometers and microphones, yet they sit idle 99% of the time?\n\nDiSensor transforms these untapped resources into vital scientific value, and provides rewards for your contribution:\n\n🔬 Scientific Impact: Help build a high-precision global environmental map.\n⏰ Effortless: Runs automatically in the background without interruption.\n🎁 Future Rewards: Earn QBIT tokens and share in the network\'s growth.\n\n👉 Referral Code: *#CODE#*\nhttps://disensor.qubitrhythm.com/dashboard/start.html?ref=#CODE#',
       'share_link': 'Share & Join Together',
       'boost_active': 'BOOST ACTIVE',
       'referred_by': 'Referred by:',
@@ -170,8 +174,10 @@ class AppStrings {
       'map_desc': '探索高收益区域\n优化您的挖矿路线',
       'interactive': '交互式',
       'invite_earn': '加入全球感知网络',
-      'invite_desc':
-          '📡 欢迎加入 DiSensor Network —— 一个崭新的全球数据感知网络！\n\n您是否知道，您的手机内置了多种传感器，但它们 99% 的时间都在闲置？\n\nDiSensor 将这些沉睡的资源转化为珍贵的科研价值，并且为您回馈收益：\n\n🏙 采集气压数据助力精准天气预测\n🔊 监测噪音污染服务宜居城市规划\n👥 扫描信号密度估算人群热力分布，保障公共安全\n\n🔬 贡献科研：帮助全球专家构建最精细的环境数据集\n⏰ 零感参与：全自动运行，无需手动干预，不影响日常使用\n🎁 潜在收益：获得 QBIT 奖励，分享未来网络成长红利\n\n期待您的加入，成为 DiSensor 的早期探索者！使用我的邀请码立享 +20% 加速！',
+      'invite_desc': '🏙 采集气压、噪音等数据助力全球科研，零感运行并赚取 QBIT 收益。',
+      'share_subject': '� DiSensor Network - 一个开创性的全球数据感知社区',
+      'share_body':
+          '📱 您是否知道，您的手机内置了多种传感器，但它们 99% 的时间都在闲置？\n\nDiSensor 将这些沉睡的资源转化为珍贵的科研价值，并且为您回馈收益：\n\n🔬 贡献科研：协助构建全球精细化环境图谱\n⏰ 零感参与：全自动运行，不影响日常使用\n🎁 潜在收益：获得 QBIT 奖励，分享网络成长红利\n\n👉 邀请码：*#CODE#*\nhttps://disensor.qubitrhythm.com/dashboard/start.html?ref=#CODE#',
       'share_link': '邀请好友加入',
       'boost_active': '加成已激活',
       'referred_by': '推荐人：',

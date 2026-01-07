@@ -124,12 +124,10 @@ class _DebugDashboardState extends State<DebugDashboard>
 
   void _shareInvite() {
     final code = deviceId?.substring(0, 6).toUpperCase() ?? 'XXXXXX';
-    final String shareText = "📱【DiSensor】\n"
-        "${AppStrings.t('invite_desc')}\n"
-        "👉 Code: *$code*\n"
-        "https://disensor.qubitrhythm.com/dashboard/start.html?ref=$code";
+    final String subject = AppStrings.t('share_subject');
+    final String body = AppStrings.t('share_body').replaceAll('#CODE#', code);
 
-    SharePlus.instance.share(ShareParams(text: shareText));
+    Share.share(body, subject: subject);
   }
 
   @override
