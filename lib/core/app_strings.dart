@@ -43,10 +43,10 @@ class AppStrings {
       'map_desc':
           'Explore high-yield hexagons\nand optimize your mining routes',
       'interactive': 'Interactive',
-      'invite_earn': 'Expand the Grid',
+      'invite_earn': 'Join the DePIN Revolution',
       'invite_desc':
-          'DiSensor: Turn your phone\'s idle time into value! Contribute to global scientific research and earn potential rewards. Let\'s build the world\'s first collaborative data network together!',
-      'share_link': 'Share Link Now',
+          '🚀 DiSensor: The first decentralized physical infrastructure network (DePIN) for environmental sensing.\n\n💰 Passive Income: Earn QBIT tokens 24/7 while your phone collects valuable real-world data.\n\n🌍 Early Adopter Bonus: Join now and secure your position before the network goes mainstream. Your data today = future token value!\n\nUse my referral code for +20% mining boost!',
+      'share_link': 'Share & Earn Together',
       'boost_active': 'BOOST ACTIVE',
       'referred_by': 'Referred by:',
       'mining_efficiency': '+20% Mining Efficiency',
@@ -169,10 +169,10 @@ class AppStrings {
       'coverage_map': '覆盖地图',
       'map_desc': '探索高收益区域\n优化您的挖矿路线',
       'interactive': '交互式',
-      'invite_earn': '拓展感知网络',
+      'invite_earn': '加入 DePIN 革命',
       'invite_desc':
-          'DiSensor：让您的手机在空闲时间自动创造价值！参与全球科研数据共建，赢取未来非凡收益。立即加入，共建全球个人协作数据网络！',
-      'share_link': '立即分享链接',
+          '🚀 DiSensor：全球首个去中心化物理基础设施网络（DePIN），专注环境感知。\n\n💰 躺着赚钱：手机自动采集数据，24小时赚取 QBIT 代币。\n\n🌍 早期红利：现在加入锁定你的先发优势！今日的数据 = 未来的代币价值！\n\n使用我的邀请码，立享 +20% 挖矿加速！',
+      'share_link': '分享共赢',
       'boost_active': '加成已激活',
       'referred_by': '推荐人：',
       'mining_efficiency': '+20% 挖矿效率',
