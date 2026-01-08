@@ -355,7 +355,7 @@ class _DebugDashboardState extends State<DebugDashboard>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text("DEVICE SENSORS",
+          Text(AppStrings.t('device_sensors').toUpperCase(),
               style: TextStyle(
                   color: Colors.cyanAccent.withValues(alpha: 0.7),
                   fontSize: 11,
@@ -374,17 +374,20 @@ class _DebugDashboardState extends State<DebugDashboard>
                         val = "Active";
                       }
                       return _buildSensorChip(
-                          "Accelerometer", val, Icons.vibration, Colors.orange);
+                          AppStrings.t('sensor_accelerometer'),
+                          val,
+                          Icons.vibration,
+                          Colors.orange);
                     }),
                 SizedBox(width: 12),
-                _buildSensorChip(
-                    "Gyroscope", "Active", Icons.rotate_right, Colors.blue),
+                _buildSensorChip(AppStrings.t('sensor_gyroscope'), "Active",
+                    Icons.rotate_right, Colors.blue),
                 SizedBox(width: 12),
-                _buildSensorChip(
-                    "Magnetometer", "Ready", Icons.explore, Colors.red),
+                _buildSensorChip(AppStrings.t('sensor_magnetometer'), "Ready",
+                    Icons.explore, Colors.red),
                 SizedBox(width: 12),
-                _buildSensorChip(
-                    "Light", "On", Icons.light_mode, Colors.yellow),
+                _buildSensorChip(AppStrings.t('sensor_light'), "On",
+                    Icons.light_mode, Colors.yellow),
               ],
             ),
           )
