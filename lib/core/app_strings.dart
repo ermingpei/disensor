@@ -45,11 +45,11 @@ class AppStrings {
       'interactive': 'Interactive',
       'invite_earn': 'Join the Global Sensing Network',
       'invite_desc':
-          '🏙 Contribute sensor data for global research and earn QBit rewards effortlessly.',
+          '🏙 Turn your phone into a sensor. Earn QBit rewards automatically.',
       'share_subject':
-          '📱 DiSensor Network - A groundbreaking global data sensing community',
+          '📱 Join the DiSensor Network: Measuring the World\'s Pulse together',
       'share_body':
-          '📱 Did you know your phone is packed with sensors like barometers and microphones, yet they sit idle 99% of the time?\n\nDiSensor transforms these untapped resources into vital scientific value, and provides rewards for your contribution:\n\n🔬 Scientific Impact: Help build a high-precision global environmental map.\n⏰ Effortless Running: Runs automatically in the background without interruption.\n🎁 Future Rewards: Earn 💰QBit tokens and share in the network\'s growth.\n\n👉 Referral Code: *#CODE#*\nhttps://disensor.qubitrhythm.com/dashboard/start.html?ref=#CODE#',
+          'Did you know your phone is packed with sensors that sit idle 99% of the time?\n\nJoin DiSensor to transform these resources into scientific value and earn rewards:\n\n🔬 Build the global environmental map.\n⏰ Runs automatically in the background.\n💰 Earn QBit tokens and share the network growth.\n\n👉 Referral Code: *#CODE#*\nhttps://disensor.qubitrhythm.com/dashboard/start.html?ref=#CODE#',
       'share_link': 'Share & Join Together',
       'boost_active': 'BOOST ACTIVE',
       'referred_by': 'Referred by:',
@@ -174,10 +174,10 @@ class AppStrings {
       'map_desc': '探索高收益区域\n优化您的挖矿路线',
       'interactive': '交互式',
       'invite_earn': '加入全球感知网络',
-      'invite_desc': '🏙 采集气压、噪音等数据助力全球科研，零感运行并赚取 QBit 收益。',
-      'share_subject': '� DiSensor Network - 一个开创性的全球数据感知社区',
+      'invite_desc': '🏙 手机变身探测器。全自动运行，轻松赚取 QBit。',
+      'share_subject': '📱 加入 DiSensor 网络，共建探测全球脉搏的感知社区',
       'share_body':
-          '📱 您是否知道，您的手机内置了多种传感器，但它们绝大部分时间都在闲置？\n\nDiSensor将这些沉睡的资源转化为珍贵的科研价值，并且为您回馈收益：\n\n🔬 贡献科研：协助构建全球精细化环境图谱\n⏰ 零感参与：全自动运行，不影响日常使用\n🎁 潜在收益：获得💰QBit奖励，未来分享非凡收益\n\n👉 邀请码：*#CODE#*\nhttps://disensor.qubitrhythm.com/dashboard/start.html?ref=#CODE#',
+          '您是否知道，您的手机内置了多种传感器，但它们绝大部分时间都在闲置？\n\n加入 DiSensor 将这些沉睡的资源转化为科研价值，并为您回馈收益：\n\n🔬 贡献科研：协助构建全球环境图谱\n⏰ 零感参与：全自动运行，无需干预\n💰 获取收益：赚取 QBit 奖励，分享成长红利\n\n👉 邀请码：*#CODE#*\nhttps://disensor.qubitrhythm.com/dashboard/start.html?ref=#CODE#',
       'share_link': '邀请好友加入',
       'boost_active': '加成已激活',
       'referred_by': '推荐人：',
