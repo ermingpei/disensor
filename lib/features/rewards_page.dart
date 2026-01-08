@@ -475,11 +475,22 @@ class _RewardsPageState extends State<RewardsPage>
         children: [
           Icon(Icons.rocket_launch, color: accent, size: 40),
           const SizedBox(height: 16),
-          Text(AppStrings.t('become_prime'),
-              style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16)),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(AppStrings.t('become_prime'),
+                  style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16)),
+              SizedBox(width: 8),
+              GestureDetector(
+                onTap: () => _showStakingInfoDialog(),
+                child: Icon(Icons.info_outline,
+                    color: Colors.white.withValues(alpha: 0.5), size: 18),
+              )
+            ],
+          ),
           const SizedBox(height: 8),
           Text(
             AppStrings.t('stake_desc'),
@@ -640,6 +651,36 @@ class _RewardsPageState extends State<RewardsPage>
                 ElevatedButton.styleFrom(backgroundColor: Colors.purpleAccent),
             child: Text(AppStrings.t('stake_now'),
                 style: const TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showStakingInfoDialog() {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF1E293B),
+        title: Row(
+          children: [
+            Icon(Icons.stars, color: Colors.purpleAccent, size: 24),
+            SizedBox(width: 8),
+            Text(AppStrings.t('staking_explain_title'),
+                style: const TextStyle(color: Colors.white, fontSize: 18)),
+          ],
+        ),
+        content: SingleChildScrollView(
+          child: Text(
+            AppStrings.t('staking_explain_desc'),
+            style: const TextStyle(color: Colors.white70, height: 1.5),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text(AppStrings.t('got_it'),
+                style: const TextStyle(color: Colors.purpleAccent)),
           ),
         ],
       ),

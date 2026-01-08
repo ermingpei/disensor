@@ -311,13 +311,15 @@ class _DebugDashboardState extends State<DebugDashboard>
                   ),
                 ),
                 SizedBox(width: 12),
-                // Placeholder for future metric (e.g. WiFi Count)
+                // Cell Signal Metric Card
                 Expanded(
-                  child: Container(
-                    padding: EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                        color: Colors.transparent,
-                        borderRadius: BorderRadius.circular(16)),
+                  child: _buildMetricCard(
+                    AppStrings.t('cell_signal'),
+                    manager.cellSignal != 0 ? '${manager.cellSignal}' : '--',
+                    'dBm (${manager.cellType})',
+                    Icons.cell_tower,
+                    Colors.deepPurpleAccent,
+                    AppStrings.t('cell_signal_desc'),
                   ),
                 ),
               ],
@@ -535,24 +537,85 @@ class _DebugDashboardState extends State<DebugDashboard>
     return Consumer<SensorManager>(builder: (context, manager, _) {
       String netType = manager.networkType;
       String latency = manager.latency > 0 ? '${manager.latency}ms' : '--';
+      String jitter = manager.jitter >= 0 ? '${manager.jitter}ms' : '--';
+      String packetLoss = manager.packetLoss >= 0
+          ? '${manager.packetLoss.toStringAsFixed(0)}%'
+          : '--';
       Color netColor = netType == 'WiFi' ? Colors.blue : Colors.purpleAccent;
 
-      return Row(
+      // Color code packet loss: Green (0%), Yellow (1-5%), Red (>5%)
+      Color packetLossColor = manager.packetLoss == 0
+          ? Colors.green
+          : (manager.packetLoss <= 5 ? Colors.amber : Colors.redAccent);
+
+      return Column(
         children: [
-          _buildStatBox(
-              AppStrings.t('network'),
-              netType,
-              netType == 'WiFi' ? Icons.wifi : Icons.signal_cellular_alt,
-              netColor),
-          SizedBox(width: 10),
-          _buildStatBox(
-              AppStrings.t('latency'), latency, Icons.bolt, Colors.orange),
-          SizedBox(width: 10),
-          _buildStatBox(AppStrings.t('hexes'), '${manager.uniqueHexCount}',
-              Icons.hexagon, Colors.green),
+          Row(
+            children: [
+              _buildStatBox(
+                  AppStrings.t('network'),
+                  netType,
+                  netType == 'WiFi' ? Icons.wifi : Icons.signal_cellular_alt,
+                  netColor),
+              SizedBox(width: 10),
+              _buildStatBox(
+                  AppStrings.t('latency'), latency, Icons.bolt, Colors.orange),
+              SizedBox(width: 10),
+              _buildStatBox(AppStrings.t('hexes'), '${manager.uniqueHexCount}',
+                  Icons.hexagon, Colors.green),
+            ],
+          ),
+          SizedBox(height: 10),
+          Row(
+            children: [
+              _buildStatBox(AppStrings.t('jitter'), jitter, Icons.graphic_eq,
+                  Colors.teal),
+              SizedBox(width: 10),
+              _buildStatBox(AppStrings.t('packet_loss'), packetLoss,
+                  Icons.error_outline, packetLossColor),
+              SizedBox(width: 10),
+              _buildStatBox(
+                  AppStrings.t('network_quality'),
+                  _getNetworkQualityLabel(manager),
+                  Icons.speed,
+                  _getNetworkQualityColor(manager)),
+            ],
+          ),
         ],
       );
     });
+  }
+
+  String _getNetworkQualityLabel(SensorManager manager) {
+    if (manager.latency < 0) return '--';
+    if (manager.latency < 50 &&
+        manager.jitter < 10 &&
+        manager.packetLoss == 0) {
+      return AppStrings.t('signal_excellent');
+    } else if (manager.latency < 100 &&
+        manager.jitter < 30 &&
+        manager.packetLoss < 2) {
+      return AppStrings.t('signal_good');
+    } else if (manager.latency < 200 && manager.packetLoss < 5) {
+      return AppStrings.t('signal_fair');
+    }
+    return AppStrings.t('signal_poor');
+  }
+
+  Color _getNetworkQualityColor(SensorManager manager) {
+    if (manager.latency < 0) return Colors.grey;
+    if (manager.latency < 50 &&
+        manager.jitter < 10 &&
+        manager.packetLoss == 0) {
+      return Colors.greenAccent;
+    } else if (manager.latency < 100 &&
+        manager.jitter < 30 &&
+        manager.packetLoss < 2) {
+      return Colors.lightGreen;
+    } else if (manager.latency < 200 && manager.packetLoss < 5) {
+      return Colors.amber;
+    }
+    return Colors.redAccent;
   }
 
   Widget _buildStatBox(String label, String value, IconData icon, Color color) {
@@ -708,8 +771,15 @@ class _DebugDashboardState extends State<DebugDashboard>
                 children: [
                   Icon(Icons.flash_on, color: Colors.orangeAccent, size: 16),
                   SizedBox(width: 4),
-                  Text('${manager.miningRate.toStringAsFixed(1)} QBit/hr',
+                  Text(
+                      '${manager.miningRate.toStringAsFixed(1)} ${AppStrings.t('mining_rate_label')}',
                       style: TextStyle(color: Colors.grey, fontSize: 12)),
+                  SizedBox(width: 8),
+                  GestureDetector(
+                    onTap: () => _showMiningRulesDialog(context),
+                    child: Icon(Icons.info_outline,
+                        color: Colors.white24, size: 14),
+                  )
                 ],
               ),
               ElevatedButton(
@@ -796,44 +866,30 @@ class _DebugDashboardState extends State<DebugDashboard>
   }
 
   Widget _buildMultiplierBadge(SensorManager manager) {
-    double mult = manager.currentMultiplier;
-    Color color;
-    String text;
-    IconData icon;
+    String label = AppStrings.t('status_idle');
+    Color color = Colors.grey;
 
-    if (mult >= 3.0) {
-      color = Colors.purpleAccent;
-      text = "EVENT BONUS";
-      icon = Icons.bolt;
-    } else if (mult >= 1.0) {
-      color = Colors.greenAccent;
-      text = "ACTIVE";
-      icon = Icons.directions_walk;
-    } else {
-      color = Colors.orangeAccent;
-      text = "IDLE";
-      icon = Icons.snooze;
+    if (manager.isSampling) {
+      if (manager.miningRate > 1.0) {
+        label =
+            "${AppStrings.t('status_active')} (x${manager.currentMultiplier})";
+        color = Colors.greenAccent;
+      } else {
+        label = AppStrings.t('status_active');
+        color = Colors.blueAccent;
+      }
     }
 
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      padding: EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.2),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: color.withValues(alpha: 0.5)),
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
       ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 12, color: color),
-          SizedBox(width: 4),
-          Text(
-            "x${mult.toStringAsFixed(1)} $text",
-            style: TextStyle(
-                color: color, fontSize: 10, fontWeight: FontWeight.bold),
-          ),
-        ],
-      ),
+      child: Text(label,
+          style: TextStyle(
+              color: color, fontSize: 10, fontWeight: FontWeight.bold)),
     );
   }
 
@@ -1169,6 +1225,36 @@ class _DebugDashboardState extends State<DebugDashboard>
                     });
                   },
                 )
+        ],
+      ),
+    );
+  }
+
+  void _showMiningRulesDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF1E293B),
+        title: Row(
+          children: [
+            Icon(Icons.menu_book, color: Colors.cyanAccent, size: 24),
+            SizedBox(width: 8),
+            Text(AppStrings.t('mining_rules_title'),
+                style: const TextStyle(color: Colors.white, fontSize: 18)),
+          ],
+        ),
+        content: SingleChildScrollView(
+          child: Text(
+            AppStrings.t('mining_rules_desc'),
+            style: const TextStyle(color: Colors.white70, height: 1.5),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text(AppStrings.t('got_it'),
+                style: const TextStyle(color: Colors.cyanAccent)),
+          ),
         ],
       ),
     );

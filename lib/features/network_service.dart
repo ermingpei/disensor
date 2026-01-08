@@ -75,4 +75,65 @@ class NetworkService {
       return -1;
     }
   }
+
+  /// Measures network quality by performing multiple pings.
+  /// Returns a map with: latencyMs, jitterMs, packetLossPercent
+  Future<Map<String, dynamic>> measureNetworkQuality(
+      {int pingCount = 5}) async {
+    List<int> latencies = [];
+    int failures = 0;
+
+    for (int i = 0; i < pingCount; i++) {
+      final latency = await measureLatency();
+      if (latency > 0) {
+        latencies.add(latency);
+      } else {
+        failures++;
+      }
+      // Small delay between pings to avoid rate limiting
+      if (i < pingCount - 1) {
+        await Future.delayed(const Duration(milliseconds: 200));
+      }
+    }
+
+    // Calculate metrics
+    final packetLossPercent = (failures / pingCount) * 100;
+
+    if (latencies.isEmpty) {
+      return {
+        'latencyMs': -1,
+        'jitterMs': -1,
+        'packetLossPercent': packetLossPercent,
+      };
+    }
+
+    // Average latency
+    final avgLatency = latencies.reduce((a, b) => a + b) / latencies.length;
+
+    // Jitter: Standard deviation of latencies
+    double jitter = 0;
+    if (latencies.length > 1) {
+      double sumSquaredDiff = 0;
+      for (var lat in latencies) {
+        sumSquaredDiff += (lat - avgLatency) * (lat - avgLatency);
+      }
+      jitter = _sqrt(sumSquaredDiff / latencies.length);
+    }
+
+    return {
+      'latencyMs': avgLatency.round(),
+      'jitterMs': jitter.round(),
+      'packetLossPercent': packetLossPercent,
+    };
+  }
+
+  /// Simple square root implementation to avoid dart:math import
+  double _sqrt(double x) {
+    if (x <= 0) return 0;
+    double guess = x / 2;
+    for (int i = 0; i < 10; i++) {
+      guess = (guess + x / guess) / 2;
+    }
+    return guess;
+  }
 }

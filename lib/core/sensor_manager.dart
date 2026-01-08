@@ -29,6 +29,10 @@ class SensorManager extends ChangeNotifier {
   String _currentNetworkType = "None";
   int _currentLatency = -1;
   int _currentBluetoothDensity = 0;
+  int _currentJitter = -1;
+  double _currentPacketLoss = 0.0;
+  String _currentCellType = "N/A";
+  int _currentCellSignal = 0;
   bool _isSampling = false;
 
   StreamSubscription? _pressureSub;
@@ -166,6 +170,10 @@ class SensorManager extends ChangeNotifier {
   String get networkType => _currentNetworkType;
   int get latency => _currentLatency;
   int get bluetoothDensity => _currentBluetoothDensity;
+  int get jitter => _currentJitter;
+  double get packetLoss => _currentPacketLoss;
+  String get cellType => _currentCellType;
+  int get cellSignal => _currentCellSignal;
   bool get isSampling => _isSampling;
 
   final PrivacyGuard _privacyGuard = PrivacyGuard(salt: "sentinel-alpha-salt");
@@ -303,9 +311,14 @@ class SensorManager extends ChangeNotifier {
                 const LocationSettings(accuracy: LocationAccuracy.best));
         _liveLocation = LatLng(pos.latitude, pos.longitude);
 
-        // Poll Network Stats
+        // Poll Network Stats (with Jitter and PacketLoss)
         _currentNetworkType = await _networkService.getNetworkType();
-        _currentLatency = await _networkService.measureLatency();
+        final netQuality =
+            await _networkService.measureNetworkQuality(pingCount: 3);
+        _currentLatency = netQuality['latencyMs'] as int;
+        _currentJitter = netQuality['jitterMs'] as int;
+        _currentPacketLoss =
+            (netQuality['packetLossPercent'] as num).toDouble();
 
         notifyListeners();
         _checkUploadRule(pos, deviceId);
@@ -327,12 +340,20 @@ class SensorManager extends ChangeNotifier {
         }
 
         // Scan Cellular every 60 seconds (Android Only)
-        // Store results in a local variable if needed for UI, or just pass to upload
         if (DateTime.now().difference(_lastCellScanTime).inSeconds > 60) {
-          // We don't necessarily need to show raw cell data on UI yet,
-          // but we trigger the scan here to ensure it works.
-          // Actual data fetch happens during upload.
-          _lastCellScanTime = DateTime.now();
+          _cellularScanner.getCellularData().then((cellData) {
+            if (cellData.isNotEmpty) {
+              // Extract primary cell info (registered cell)
+              final primary = cellData.firstWhere(
+                (c) => c['registered'] == true,
+                orElse: () => cellData.first,
+              );
+              _currentCellType = primary['type']?.toString() ?? 'N/A';
+              _currentCellSignal = (primary['dbm'] as num?)?.toInt() ?? 0;
+              notifyListeners();
+            }
+            _lastCellScanTime = DateTime.now();
+          });
         }
 
         // Attempt to sync pending data if network is available
