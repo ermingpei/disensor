@@ -1,6 +1,6 @@
 name: sensor_sentinel
 description: A new Flutter project for ground truth data collection.
-version: 1.0.6+6
+version: 1.0.7+7
 
 environment:
   sdk: '>=3.0.0 <4.0.0'
@@ -34,6 +34,7 @@ dependencies:
   flutter_blue_plus: ^2.1.0
   sentry_flutter: ^8.12.0
   url_launcher: ^6.2.5
+  package_info_plus: ^9.0.0
 
 dev_dependencies:
   flutter_test:

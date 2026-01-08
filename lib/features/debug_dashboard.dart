@@ -5,6 +5,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:flutter/services.dart'; // For Clipboard
+import 'package:package_info_plus/package_info_plus.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'about_page.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:sensors_plus/sensors_plus.dart';
@@ -189,10 +192,27 @@ class _DebugDashboardState extends State<DebugDashboard>
                   children: [
                     ListTile(
                       leading: Icon(Icons.info, color: Colors.cyanAccent),
-                      title: Text(AppStrings.t('version'),
+                      title: Text(AppStrings.t('about'),
                           style: TextStyle(color: Colors.white70)),
-                      subtitle: Text("v${UpdateChecker.currentVersion}",
-                          style: TextStyle(color: Colors.white54)),
+                      onTap: () {
+                        Navigator.pop(ctx);
+                        Navigator.push(context,
+                            MaterialPageRoute(builder: (_) => AboutPage()));
+                      },
+                    ),
+                    FutureBuilder<PackageInfo>(
+                      future: PackageInfo.fromPlatform(),
+                      builder: (context, snapshot) {
+                        final version = snapshot.data?.version ?? '...';
+                        return ListTile(
+                          leading:
+                              Icon(Icons.verified, color: Colors.cyanAccent),
+                          title: Text(AppStrings.t('version'),
+                              style: TextStyle(color: Colors.white70)),
+                          subtitle: Text("v$version",
+                              style: TextStyle(color: Colors.white54)),
+                        );
+                      },
                     ),
                     ListTile(
                       leading: Icon(Icons.business, color: Colors.cyanAccent),
@@ -208,7 +228,15 @@ class _DebugDashboardState extends State<DebugDashboard>
                           Icon(Icons.privacy_tip, color: Colors.cyanAccent),
                       title: Text(AppStrings.t('privacy_policy'),
                           style: TextStyle(color: Colors.white70)),
-                      onTap: () => Navigator.pop(ctx),
+                      onTap: () async {
+                        Navigator.pop(ctx);
+                        final Uri url = Uri.parse(
+                            'https://disensor.qubitrhythm.com/dashboard/privacy.html');
+                        if (await canLaunchUrl(url)) {
+                          await launchUrl(url,
+                              mode: LaunchMode.externalApplication);
+                        }
+                      },
                     ),
                     ListTile(
                       leading:
