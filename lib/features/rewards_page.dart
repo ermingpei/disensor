@@ -211,21 +211,46 @@ class _RewardsPageState extends State<RewardsPage>
                 ],
               ),
               const SizedBox(height: 8),
-              Text("≈ \$${(balance * 0.0005).toStringAsFixed(4)} USD",
-                  style: TextStyle(
-                      color: accent,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500)),
+              Builder(
+                builder: (context) {
+                  final isChinese = AppStrings.languageCode == 'zh';
+                  final rate = isChinese ? 0.0035 : 0.0005;
+                  final currency = isChinese ? '¥' : '\$';
+                  final currencyName = isChinese
+                      ? AppStrings.t('currency_rmb')
+                      : AppStrings.t('currency_usd');
+                  return Text(
+                      "≈ $currency${(balance * rate).toStringAsFixed(4)} $currencyName",
+                      style: TextStyle(
+                          color: accent,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500));
+                },
+              ),
             ],
           ),
-          Container(
-            padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: Colors.white10)),
-            child: Text(AppStrings.t('tier_free'),
-                style: TextStyle(color: Colors.white, fontSize: 10)),
+          Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: () => _showTierInfoDialog(),
+              borderRadius: BorderRadius.circular(20),
+              child: Container(
+                padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: Colors.white10)),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(AppStrings.t('tier_free'),
+                        style: TextStyle(color: Colors.white, fontSize: 10)),
+                    SizedBox(width: 4),
+                    Icon(Icons.info_outline, color: Colors.white54, size: 12),
+                  ],
+                ),
+              ),
+            ),
           )
         ],
       ),
@@ -615,6 +640,36 @@ class _RewardsPageState extends State<RewardsPage>
                 ElevatedButton.styleFrom(backgroundColor: Colors.purpleAccent),
             child: Text(AppStrings.t('stake_now'),
                 style: const TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showTierInfoDialog() {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF1E293B),
+        title: Row(
+          children: [
+            Icon(Icons.workspace_premium, color: Colors.amber, size: 24),
+            SizedBox(width: 8),
+            Text(AppStrings.t('tier_info_title'),
+                style: const TextStyle(color: Colors.white, fontSize: 18)),
+          ],
+        ),
+        content: SingleChildScrollView(
+          child: Text(
+            AppStrings.t('tier_info_desc'),
+            style: const TextStyle(color: Colors.white70, height: 1.5),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text(AppStrings.t('got_it'),
+                style: const TextStyle(color: Colors.amber)),
           ),
         ],
       ),

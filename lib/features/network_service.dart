@@ -36,19 +36,42 @@ class NetworkService {
     }
   }
 
-  /// Measures latency to a reliable target (Cloudflare DNS) in milliseconds.
+  /// Measures latency to a reliable target in milliseconds.
   /// Returns -1 if request fails.
   Future<int> measureLatency() async {
     final stopwatch = Stopwatch()..start();
     try {
-      // 1.1.1.1 can be spotty in China. Microsoft's captive portal check is robust globally.
-      final response = await http.head(Uri.parse('https://www.microsoft.com'));
+      // Use generate_204 endpoints which are designed for connectivity checks
+      // These are faster and don't redirect
+      final response = await http
+          .get(
+            Uri.parse('http://connectivitycheck.gstatic.com/generate_204'),
+          )
+          .timeout(const Duration(seconds: 5));
       stopwatch.stop();
-      if (response.statusCode == 200) {
+
+      // Accept 204 (expected) or any non-error status
+      if (response.statusCode < 400) {
         return stopwatch.elapsedMilliseconds;
       }
       return -1;
     } catch (e) {
+      // Fallback: Try alternate endpoint
+      try {
+        final fallbackStopwatch = Stopwatch()..start();
+        final fallbackResponse = await http
+            .get(
+              Uri.parse('http://www.gstatic.com/generate_204'),
+            )
+            .timeout(const Duration(seconds: 5));
+        fallbackStopwatch.stop();
+
+        if (fallbackResponse.statusCode < 400) {
+          return fallbackStopwatch.elapsedMilliseconds;
+        }
+      } catch (_) {
+        // Both failed
+      }
       return -1;
     }
   }

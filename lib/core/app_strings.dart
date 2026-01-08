@@ -124,6 +124,21 @@ class AppStrings {
       'exchange_hub': 'EXCHANGE HUB',
       'available_balance': 'AVAILABLE BALANCE',
       'tier_free': 'Tier: FREE',
+      'tier_info_title': 'Membership Tiers',
+      'tier_info_desc': '''💎 **FREE Tier** (Current)
+• Basic mining rate
+• Standard redemption access
+
+🚀 **PRIME Tier** (Coming Soon)
+• +20% mining speed bonus
+• Priority redemption queue
+• Exclusive event access
+• Future equity rewards
+
+**How to Upgrade:**
+Stake 1000+ QBit for 30 days to unlock PRIME status automatically.''',
+      'currency_usd': 'USD',
+      'currency_rmb': '人民币',
       'global_pool_title': 'GLOBAL REDEMPTION POOL (24H)',
       'claimed': 'CLAIMED',
       'reset_in': 'RESET IN',
@@ -175,17 +190,17 @@ class AppStrings {
       'network': '网络类型',
       'hexes': '覆盖区域',
       'estimated_earnings': '预计收益',
-      'resume_mining': '开始挖矿',
-      'pause_mining': '暂停挖矿',
+      'resume_mining': '开始淘金',
+      'pause_mining': '暂停淘金',
       'checking_permissions': '正在检查权限...',
-      'mining_started': '✅ 挖矿已成功启动！',
-      'location_required': '📍 挖矿需要位置权限。',
+      'mining_started': '✅ 淘金成功启动！',
+      'location_required': '📍 需要位置权限。',
       'turn_on_gps': '📍 请在设备设置中打开 GPS/位置服务。',
       'perm_denied_forever': '⚠️ 位置权限被永久拒绝。点击设置以启用。',
       'allow_location': '📍 请允许位置访问权限。',
       'settings': '设置',
       'coverage_map': '覆盖地图',
-      'map_desc': '探索高收益区域\n优化您的挖矿路线',
+      'map_desc': '探索高收益区域\n优化您的淘金路线',
       'interactive': '交互式',
       'invite_earn': '加入全球数据感知网络',
       'invite_desc': '🏙 充分利用手机空闲资源、随时随地探测环境数据。全自动运行，轻松赚取QBit。',
@@ -195,7 +210,7 @@ class AppStrings {
       'share_link': '邀请好友加入',
       'boost_active': '加成已激活',
       'referred_by': '推荐人：',
-      'mining_efficiency': '+20% 挖矿效率',
+      'mining_efficiency': '+20% 淘金效率',
       'have_invite': '有邀请码？点击这里',
       'enter_code': '输入邀请码',
       'settings_title': '设置与关于',
@@ -241,7 +256,7 @@ class AppStrings {
       'invite_activated': '邀请激活！加成已生效 🚀',
 
       // --- Coverage Map ---
-      'legend_my_mining': '我的挖矿',
+      'legend_my_mining': '我的地盘',
       'legend_my_mining_desc': '您正在此处贡献算力。',
       'legend_covered': '已覆盖',
       'legend_covered_desc': '他人已探索。收益较低。',
@@ -263,6 +278,21 @@ class AppStrings {
       'exchange_hub': '兑换中心',
       'available_balance': '可用余额',
       'tier_free': '等级: 免费',
+      'tier_info_title': '会员等级说明',
+      'tier_info_desc': '''💎 **免费用户** (当前等级)
+• 基础挖矿速率
+• 标准兑换权限
+
+🚀 **Prime 高级会员** (即将开放)
+• +20% 挖矿加速
+• 优先兑换通道
+• 专属活动参与权
+• 未来网络股权分配
+
+**如何升级：**
+质押 1000 QBit 满 30 天，自动升级为 Prime 会员。''',
+      'currency_usd': 'USD',
+      'currency_rmb': '人民币',
       'global_pool_title': '全网日兑换池 (24H)',
       'claimed': '已抢光',
       'reset_in': '重置倒计时',
@@ -272,7 +302,7 @@ class AppStrings {
       'spinning': '抽奖中...',
       'instant_redemption': '即时兑换',
       'become_prime': '成为 DiSensor Prime 合伙人',
-      'stake_desc': '质押当前余额 30 天。获得 +20% 挖矿加速及 DiSensor 网络未来股权。',
+      'stake_desc': '质押当前余额 30 天。获得 +20% 淘金加速及 DiSensor 网络未来股权。',
       'enable_staking': '开启质押',
       'confirm_redemption': '确认兑换',
       'email_address': '接收邮箱',
