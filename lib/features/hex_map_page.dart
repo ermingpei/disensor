@@ -508,7 +508,14 @@ class _HexMapPageState extends State<HexMapPage> {
                 style: TextStyle(
                     color: Colors.white,
                     fontSize: 12,
-                    fontWeight: FontWeight.bold)),
+                    fontWeight: FontWeight.bold,
+                    shadows: [
+                      Shadow(
+                        blurRadius: 4,
+                        color: Colors.black,
+                        offset: Offset(1, 1),
+                      ),
+                    ])),
           ),
         ],
       ),
