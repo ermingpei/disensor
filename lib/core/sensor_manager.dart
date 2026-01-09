@@ -1,6 +1,8 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -126,6 +128,7 @@ class SensorManager extends ChangeNotifier {
       // 3. Deduct Points (Locally for UI update)
       _totalEarnings -= cost;
       if (_totalEarnings < 0) _totalEarnings = 0;
+      await _saveEarnings(); // Persist to local storage
       notifyListeners();
 
       return true;
@@ -151,6 +154,7 @@ class SensorManager extends ChangeNotifier {
 
     if (_totalEarnings >= amount) {
       _totalEarnings -= amount;
+      _saveEarnings(); // Persist to local storage (fire-and-forget)
       notifyListeners();
       return true;
     }
@@ -179,8 +183,48 @@ class SensorManager extends ChangeNotifier {
   final PrivacyGuard _privacyGuard = PrivacyGuard(salt: "sentinel-alpha-salt");
   DataSyncService? _syncService;
 
+  // Keys for SharedPreferences persistence
+  static const String _earningsKey = 'qbit_total_earnings';
+  static const String _visitedHexesKey = 'qbit_visited_hexes';
+
   void initSync(SupabaseClient client) {
     _syncService = DataSyncService(client: client, privacyGuard: _privacyGuard);
+  }
+
+  /// Loads earnings and visited hexes from local storage.
+  /// Call this on app startup after initSync.
+  Future<void> loadEarnings() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      _totalEarnings = prefs.getDouble(_earningsKey) ?? 0.0;
+
+      // Load visited hexes
+      final hexesJson = prefs.getString(_visitedHexesKey);
+      if (hexesJson != null) {
+        final List<dynamic> hexesList = jsonDecode(hexesJson);
+        _visitedHexes.clear();
+        _visitedHexes.addAll(hexesList.cast<String>());
+      }
+
+      debugPrint(
+          "💰 Loaded earnings: $_totalEarnings QBIT, ${_visitedHexes.length} hexes");
+      notifyListeners();
+    } catch (e) {
+      debugPrint("⚠️ Failed to load earnings: $e");
+    }
+  }
+
+  /// Saves earnings and visited hexes to local storage.
+  Future<void> _saveEarnings() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setDouble(_earningsKey, _totalEarnings);
+      await prefs.setString(
+          _visitedHexesKey, jsonEncode(_visitedHexes.toList()));
+      debugPrint("💾 Saved earnings: $_totalEarnings QBIT");
+    } catch (e) {
+      debugPrint("⚠️ Failed to save earnings: $e");
+    }
   }
 
   Future<bool> requestPermissions() async {
@@ -499,6 +543,7 @@ class SensorManager extends ChangeNotifier {
       }
 
       _totalEarnings += earnings;
+      await _saveEarnings(); // Persist to local storage
 
       _lastUploadTime = now;
       _lastLat = lat;

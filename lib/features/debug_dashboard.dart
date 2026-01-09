@@ -14,9 +14,11 @@ import 'package:sensors_plus/sensors_plus.dart';
 
 import '../core/sensor_manager.dart';
 import '../core/app_strings.dart';
+import '../core/auth_service.dart';
 import '../core/update_checker.dart';
 import 'hex_map_page.dart';
 import 'onboarding_page.dart';
+import 'auth_page.dart';
 import 'widgets/qbit_icon.dart';
 import 'rewards_page.dart';
 
@@ -251,6 +253,74 @@ class _DebugDashboardState extends State<DebugDashboard>
                             context,
                             MaterialPageRoute(
                                 builder: (_) => OnboardingPage()));
+                      },
+                    ),
+                    // Auth Status & Logout
+                    Consumer<AuthService>(
+                      builder: (context, authService, _) {
+                        if (authService.isLoggedIn) {
+                          return ListTile(
+                            leading:
+                                Icon(Icons.logout, color: Colors.redAccent),
+                            title: Text(AppStrings.t('logout'),
+                                style: TextStyle(color: Colors.white70)),
+                            subtitle: Text(
+                              authService.currentUser?.email ?? '',
+                              style: TextStyle(
+                                  color: Colors.white38, fontSize: 12),
+                            ),
+                            onTap: () async {
+                              Navigator.pop(ctx);
+                              await authService.signOut();
+                              if (context.mounted) {
+                                Navigator.pushReplacement(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => AuthPage(
+                                      onAuthSuccess: () {
+                                        Navigator.pushReplacement(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (_) => DebugDashboard(),
+                                          ),
+                                        );
+                                      },
+                                    ),
+                                  ),
+                                );
+                              }
+                            },
+                          );
+                        } else if (authService.isAnonymous) {
+                          return ListTile(
+                            leading:
+                                Icon(Icons.login, color: Colors.cyanAccent),
+                            title: Text(AppStrings.t('login_to_sync'),
+                                style: TextStyle(color: Colors.white70)),
+                            subtitle: Text(
+                              AppStrings.t('anonymous_warning')
+                                  .replaceAll('⚠️ ', ''),
+                              style:
+                                  TextStyle(color: Colors.amber, fontSize: 11),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            onTap: () {
+                              Navigator.pop(ctx);
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => AuthPage(
+                                    onAuthSuccess: () {
+                                      Navigator.pop(context);
+                                    },
+                                  ),
+                                ),
+                              );
+                            },
+                          );
+                        }
+                        return const SizedBox.shrink();
                       },
                     ),
                   ],

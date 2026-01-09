@@ -5,8 +5,10 @@ import 'package:wakelock_plus/wakelock_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 import 'core/sensor_manager.dart';
+import 'core/auth_service.dart';
 import 'features/onboarding_page.dart';
 import 'features/debug_dashboard.dart';
+import 'features/auth_page.dart';
 
 // Environment variables (injected via --dart-define)
 const supabaseUrl = String.fromEnvironment(
@@ -48,22 +50,35 @@ void main() async {
 }
 
 void _runApp(bool seenOnboarding) {
+  final supabaseClient = Supabase.instance.client;
+
   runApp(
-    ChangeNotifierProvider(
-      create: (context) {
-        final manager = SensorManager();
-        manager.initSync(Supabase.instance.client);
-        return manager;
-      },
-      child: SensorSentinelApp(
-          startPage: seenOnboarding ? DebugDashboard() : OnboardingPage()),
+    MultiProvider(
+      providers: [
+        // Auth Service
+        ChangeNotifierProvider(
+          create: (_) => AuthService(supabaseClient),
+        ),
+        // Sensor Manager
+        ChangeNotifierProvider(
+          create: (context) {
+            final manager = SensorManager();
+            manager.initSync(supabaseClient);
+            // Load persisted earnings from local storage
+            manager.loadEarnings();
+            return manager;
+          },
+        ),
+      ],
+      child: SensorSentinelApp(seenOnboarding: seenOnboarding),
     ),
   );
 }
 
 class SensorSentinelApp extends StatelessWidget {
-  final Widget startPage;
-  SensorSentinelApp({required this.startPage});
+  final bool seenOnboarding;
+
+  const SensorSentinelApp({super.key, required this.seenOnboarding});
 
   @override
   Widget build(BuildContext context) {
@@ -72,11 +87,47 @@ class SensorSentinelApp extends StatelessWidget {
       title: 'DiSensor',
       theme: ThemeData(
         brightness: Brightness.dark,
-        scaffoldBackgroundColor: Color(0xFF121212),
+        scaffoldBackgroundColor: const Color(0xFF121212),
         primarySwatch: Colors.cyan,
         useMaterial3: true,
       ),
-      home: startPage,
+      home: _AuthGate(seenOnboarding: seenOnboarding),
+    );
+  }
+}
+
+/// Auth gate widget to handle authentication flow
+class _AuthGate extends StatelessWidget {
+  final bool seenOnboarding;
+
+  const _AuthGate({required this.seenOnboarding});
+
+  @override
+  Widget build(BuildContext context) {
+    return Consumer<AuthService>(
+      builder: (context, authService, _) {
+        // User is logged in or chose anonymous mode
+        if (authService.isLoggedIn || authService.isAnonymous) {
+          // Show onboarding if first time
+          if (!seenOnboarding) {
+            return OnboardingPage();
+          }
+          return DebugDashboard();
+        }
+
+        // Show auth page
+        return AuthPage(
+          onAuthSuccess: () {
+            // Navigate to appropriate page based on onboarding status
+            Navigator.of(context).pushReplacement(
+              MaterialPageRoute(
+                builder: (_) =>
+                    seenOnboarding ? DebugDashboard() : OnboardingPage(),
+              ),
+            );
+          },
+        );
+      },
     );
   }
 }

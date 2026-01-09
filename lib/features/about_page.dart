@@ -89,7 +89,7 @@ class AboutPage extends StatelessWidget {
             SizedBox(height: 20),
             Center(
               child: Text(
-                isZh ? 'Powerd by Qubit Rhythm' : 'Powered by Qubit Rhythm',
+                AppStrings.t('powered_by'),
                 style: TextStyle(color: Colors.white24, fontSize: 12),
               ),
             ),
