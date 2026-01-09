@@ -234,6 +234,20 @@ Stake 1000+ QBit for 30 days to unlock PRIME status automatically.''',
       'continue_anonymous': 'Continue as Guest (Not Recommended)',
       'logout': 'Logout',
       'login_to_sync': 'Login to sync earnings',
+      // Phone Login
+      'email_login': 'Email',
+      'phone_login': 'Phone',
+      'phone_number': 'Phone Number',
+      'verification_code': 'Verification Code',
+      'send_code': 'SEND CODE',
+      'verify_and_login': 'VERIFY & LOGIN',
+      'code_sent': 'Verification code sent!',
+      // Email Verification
+      'verify_email_title': 'Verify Your Email',
+      'verify_email_desc':
+          'We\'ve sent a verification link to your email. Please click the link to activate your account.',
+      'resend_verification': 'Resend Email',
+      'verification_resent': 'Verification email resent!',
     },
     'zh': {
       // --- General ---
@@ -436,6 +450,19 @@ Stake 1000+ QBit for 30 days to unlock PRIME status automatically.''',
       'continue_anonymous': '以访客身份继续（不推荐）',
       'logout': '退出登录',
       'login_to_sync': '登录以同步收益',
+      // Phone Login
+      'email_login': '邮箱登录',
+      'phone_login': '手机登录',
+      'phone_number': '手机号',
+      'verification_code': '验证码',
+      'send_code': '发送验证码',
+      'verify_and_login': '验证并登录',
+      'code_sent': '验证码已发送！',
+      // Email Verification
+      'verify_email_title': '验证您的邮箱',
+      'verify_email_desc': '我们已向您的邮箱发送验证链接。请点击链接激活账户。',
+      'resend_verification': '重发验证邮件',
+      'verification_resent': '验证邮件已重发！',
     },
   };
 
