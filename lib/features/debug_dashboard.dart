@@ -589,7 +589,7 @@ class _DebugDashboardState extends State<DebugDashboard>
                     border: Border.all(
                         color: Colors.cyanAccent.withValues(alpha: 0.5)),
                   ),
-                  child: Text("LIVE VIEW",
+                  child: Text(AppStrings.t('status_live'),
                       style: TextStyle(
                           color: Colors.cyanAccent,
                           fontSize: 10,
