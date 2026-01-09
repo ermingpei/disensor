@@ -58,8 +58,8 @@ class AboutPage extends StatelessWidget {
               Icons.paid,
               isZh ? '获取收益' : 'Earn Rewards',
               isZh
-                  ? '闲置资源变现。每一次自动采集都在为您赚取 QBit 代币，分享网络成长的长期红利。'
-                  : 'Monetize idle resources. Every automatic scan earns you QBit tokens, sharing in the long-term growth of the network.',
+                  ? '闲置资源变现。每一次自动采集都在为您赚取感测积分，可兑换礼品卡。'
+                  : 'Monetize idle resources. Every automatic scan earns you Sense Points, which can be redeemed for gift cards.',
             ),
             _buildFeatureItem(
               Icons.auto_awesome,
