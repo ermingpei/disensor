@@ -7,7 +7,7 @@ import 'package:sentry_flutter/sentry_flutter.dart';
 import 'core/sensor_manager.dart';
 import 'core/auth_service.dart';
 import 'features/onboarding_page.dart';
-import 'features/debug_dashboard.dart';
+import 'features/toolbox_home_page.dart';
 import 'features/auth_page.dart';
 import 'features/consent_dialog.dart';
 
@@ -158,7 +158,7 @@ class _AuthGateState extends State<_AuthGate> {
           if (!widget.seenOnboarding) {
             return OnboardingPage();
           }
-          return DebugDashboard();
+          return const ToolboxHomePage();
         }
 
         // Show auth page
@@ -167,8 +167,9 @@ class _AuthGateState extends State<_AuthGate> {
             // Navigate to appropriate page based on onboarding status
             Navigator.of(context).pushReplacement(
               MaterialPageRoute(
-                builder: (_) =>
-                    widget.seenOnboarding ? DebugDashboard() : OnboardingPage(),
+                builder: (_) => widget.seenOnboarding
+                    ? const ToolboxHomePage()
+                    : OnboardingPage(),
               ),
             );
           },

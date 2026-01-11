@@ -112,6 +112,53 @@ class AppStrings {
       'rewards_title': 'Rewards & Equity',
       'invite_activated': 'Invite Activated! Boost applied. 🚀',
 
+      // --- Toolbox Home ---
+      'toolbox_title': 'Sensor Toolbox',
+      'data_contribution': 'Data Contribution',
+      'live_readings': 'Live Readings',
+      'tools': 'Tools',
+      'your_sensors': 'Your Sensors',
+      'sensors_idle_hint':
+          'These sensors are idle 99% of the time - put them to work!',
+      'noise_meter': 'Noise Meter',
+      'noise_meter_desc': 'Measure ambient sound levels',
+      'wifi_analyzer': 'WiFi Analyzer',
+      'wifi_analyzer_desc': 'Scan network signal strength',
+      'magnetometer': 'Metal Detector',
+      'magnetometer_desc': 'Detect magnetic fields',
+      'earning_dashboard': 'Data Contribution',
+      'earning_dashboard_desc': 'Earn rewards by contributing sensor data',
+
+      // --- Noise Meter Page ---
+      'noise_level_quiet': 'Quiet',
+      'noise_level_normal': 'Normal',
+      'noise_level_moderate': 'Moderate',
+      'noise_level_loud': 'Loud',
+      'noise_level_dangerous': 'Dangerous!',
+      'min_value': 'Min',
+      'max_value': 'Max',
+      'noise_reference': 'Noise Reference',
+      'noise_ref_whisper': 'Whisper',
+      'noise_ref_talk': 'Talking',
+      'noise_ref_traffic': 'Traffic',
+      'noise_ref_danger': 'Dangerous',
+
+      // --- WiFi Analyzer Page ---
+      'networks_found': 'Networks Found',
+      'strongest_signal': 'Strongest Signal',
+      'no_networks': 'No networks found',
+      'retry': 'Retry',
+
+      // --- Magnetometer Page ---
+      'metal_detected': 'Metal Detected!',
+      'no_metal': 'No Metal',
+      'detection_level': 'Detection Level',
+      'baseline': 'Baseline',
+      'calibrate': 'Calibrate',
+      'magnetometer_tips': 'Tips',
+      'magnetometer_tips_desc':
+          'Move phone slowly near objects. Calibrate in an open area away from metal for best accuracy.',
+
       // --- Coverage Map ---
       'legend_my_mining': 'My Mining',
       'legend_my_mining_desc': 'You are actively contributing here.',
@@ -337,6 +384,51 @@ Save 1000+ Sense Points for 30 days to unlock PRIME status automatically.''',
       'slogan': '测量世界的脉动',
       'rewards_title': '奖励与权益',
       'invite_activated': '邀请激活！加成已生效 🚀',
+
+      // --- Toolbox Home ---
+      'toolbox_title': '传感器工具箱',
+      'data_contribution': '数据贡献',
+      'live_readings': '实时读数',
+      'tools': '工具',
+      'your_sensors': '您的传感器',
+      'sensors_idle_hint': '这些传感器99%的时间都在闲置 - 让它们发挥作用吧！',
+      'noise_meter': '噪音分贝仪',
+      'noise_meter_desc': '测量环境噪音等级',
+      'wifi_analyzer': 'WiFi信号分析',
+      'wifi_analyzer_desc': '扫描网络信号强度',
+      'magnetometer': '金属探测器',
+      'magnetometer_desc': '检测磁场强度',
+      'earning_dashboard': '数据贡献',
+      'earning_dashboard_desc': '贡献传感器数据获得奖励',
+
+      // --- Noise Meter Page ---
+      'noise_level_quiet': '安静',
+      'noise_level_normal': '正常',
+      'noise_level_moderate': '中等',
+      'noise_level_loud': '嘈杂',
+      'noise_level_dangerous': '危险！',
+      'min_value': '最小',
+      'max_value': '最大',
+      'noise_reference': '噪音参考',
+      'noise_ref_whisper': '耳语',
+      'noise_ref_talk': '交谈',
+      'noise_ref_traffic': '交通',
+      'noise_ref_danger': '危险',
+
+      // --- WiFi Analyzer Page ---
+      'networks_found': '发现网络',
+      'strongest_signal': '最强信号',
+      'no_networks': '未发现网络',
+      'retry': '重试',
+
+      // --- Magnetometer Page ---
+      'metal_detected': '检测到金属！',
+      'no_metal': '未检测到金属',
+      'detection_level': '检测强度',
+      'baseline': '基线',
+      'calibrate': '校准',
+      'magnetometer_tips': '使用技巧',
+      'magnetometer_tips_desc': '缓慢移动手机靠近物体。在远离金属的开阔区域校准可获得最佳精度。',
 
       // --- Coverage Map ---
       'legend_my_mining': '我的地盘',
