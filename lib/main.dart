@@ -9,6 +9,7 @@ import 'core/auth_service.dart';
 import 'features/onboarding_page.dart';
 import 'features/debug_dashboard.dart';
 import 'features/auth_page.dart';
+import 'features/consent_dialog.dart';
 
 // Environment variables (injected via --dart-define)
 const supabaseUrl = String.fromEnvironment(
@@ -97,19 +98,64 @@ class SensorSentinelApp extends StatelessWidget {
 }
 
 /// Auth gate widget to handle authentication flow
-class _AuthGate extends StatelessWidget {
+/// Now includes privacy consent check before auth
+class _AuthGate extends StatefulWidget {
   final bool seenOnboarding;
 
   const _AuthGate({required this.seenOnboarding});
 
   @override
+  State<_AuthGate> createState() => _AuthGateState();
+}
+
+class _AuthGateState extends State<_AuthGate> {
+  bool _checkingConsent = true;
+  bool _hasConsent = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkConsent();
+  }
+
+  Future<void> _checkConsent() async {
+    final consent = await ConsentDialog.hasConsent();
+    if (mounted) {
+      setState(() {
+        _hasConsent = consent;
+        _checkingConsent = false;
+      });
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    // Show loading while checking consent
+    if (_checkingConsent) {
+      return const Scaffold(
+        backgroundColor: Color(0xFF0F172A),
+        body: Center(
+          child: CircularProgressIndicator(color: Colors.cyanAccent),
+        ),
+      );
+    }
+
+    // Show consent dialog if not yet consented
+    if (!_hasConsent) {
+      return ConsentDialog(
+        onAccept: () {
+          setState(() => _hasConsent = true);
+        },
+      );
+    }
+
+    // Normal auth flow
     return Consumer<AuthService>(
       builder: (context, authService, _) {
         // User is logged in or chose anonymous mode
         if (authService.isLoggedIn || authService.isAnonymous) {
           // Show onboarding if first time
-          if (!seenOnboarding) {
+          if (!widget.seenOnboarding) {
             return OnboardingPage();
           }
           return DebugDashboard();
@@ -122,7 +168,7 @@ class _AuthGate extends StatelessWidget {
             Navigator.of(context).pushReplacement(
               MaterialPageRoute(
                 builder: (_) =>
-                    seenOnboarding ? DebugDashboard() : OnboardingPage(),
+                    widget.seenOnboarding ? DebugDashboard() : OnboardingPage(),
               ),
             );
           },

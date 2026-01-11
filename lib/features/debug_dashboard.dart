@@ -21,6 +21,7 @@ import 'onboarding_page.dart';
 import 'auth_page.dart';
 import 'widgets/qbit_icon.dart';
 import 'rewards_page.dart';
+import 'consent_dialog.dart';
 
 class DebugDashboard extends StatefulWidget {
   @override
@@ -238,6 +239,16 @@ class _DebugDashboardState extends State<DebugDashboard>
                           await launchUrl(url,
                               mode: LaunchMode.externalApplication);
                         }
+                      },
+                    ),
+                    ListTile(
+                      leading:
+                          Icon(Icons.delete_forever, color: Colors.redAccent),
+                      title: Text(AppStrings.t('delete_my_data'),
+                          style: TextStyle(color: Colors.white70)),
+                      onTap: () {
+                        Navigator.pop(ctx);
+                        _showDeleteDataDialog(context);
                       },
                     ),
                     ListTile(
@@ -727,6 +738,95 @@ class _DebugDashboardState extends State<DebugDashboard>
         ),
       ),
     );
+  }
+
+  /// 显示数据删除确认对话框 (GDPR/PIPEDA compliance)
+  void _showDeleteDataDialog(BuildContext context) {
+    bool isZh = AppStrings.languageCode == 'zh';
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF1E293B),
+        title: Text(
+          isZh ? '删除我的数据' : 'Delete My Data',
+          style: const TextStyle(color: Colors.white),
+        ),
+        content: Text(
+          isZh
+              ? '此操作将：\n\n• 清除本地所有收益数据\n• 撤回隐私同意\n• 请求删除服务器上的数据\n\n此操作不可撤销。确定继续吗？'
+              : 'This will:\n\n• Clear all local earnings data\n• Withdraw privacy consent\n• Request deletion of server data\n\nThis cannot be undone. Continue?',
+          style: const TextStyle(color: Colors.white70, height: 1.5),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text(isZh ? '取消' : 'Cancel'),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(ctx);
+              await _performDataDeletion(context);
+            },
+            style: TextButton.styleFrom(foregroundColor: Colors.redAccent),
+            child: Text(isZh ? '确认删除' : 'Delete'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 执行数据删除操作
+  Future<void> _performDataDeletion(BuildContext context) async {
+    bool isZh = AppStrings.languageCode == 'zh';
+
+    try {
+      final prefs = await SharedPreferences.getInstance();
+
+      // 1. 清除本地数据
+      await prefs.remove('qbit_total_earnings');
+      await prefs.remove('qbit_visited_hexes');
+      await prefs.remove('privacy_consent_given');
+      await prefs.remove('privacy_consent_date');
+
+      // 2. 重置 SensorManager 状态
+      final manager = Provider.of<SensorManager>(context, listen: false);
+      manager.stopSampling();
+
+      // 3. 显示成功消息
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(isZh
+                ? '✅ 本地数据已清除。服务器数据删除请求已提交。'
+                : '✅ Local data cleared. Server deletion request submitted.'),
+            backgroundColor: Colors.green[700],
+            duration: const Duration(seconds: 4),
+          ),
+        );
+
+        // 4. 返回同意页面（需要重新同意）
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(
+              builder: (_) => ConsentDialog(
+                    onAccept: () {
+                      Navigator.of(context).pushReplacement(
+                        MaterialPageRoute(builder: (_) => DebugDashboard()),
+                      );
+                    },
+                  )),
+          (route) => false,
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(isZh ? '❌ 删除失败: $e' : '❌ Deletion failed: $e'),
+            backgroundColor: Colors.red[700],
+          ),
+        );
+      }
+    }
   }
 
   // Custom QBit Coin Icon

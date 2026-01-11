@@ -24,15 +24,15 @@ osascript -e "tell application \"Terminal\" to do script \"cd $(pwd) && echo '�
 
 # 2. iPhone 12
 echo "🚀 Launching iPhone 12 Agent..."
-osascript -e "tell application \"Terminal\" to do script \"cd $(pwd) && echo '🍏 iPHONE 12 AGENT' && flutter run -d $IPHONE_12_ID\""
+osascript -e "tell application \"Terminal\" to do script \"cd $(pwd) && echo '🍏 iPHONE 12 AGENT' && flutter run --profile -d $IPHONE_12_ID\""
 
 # 3. iPhone XII
 echo "🚀 Launching iPhone XII Agent..."
-osascript -e "tell application \"Terminal\" to do script \"cd $(pwd) && echo '🍏 iPHONE XII AGENT' && flutter run -d $IPHONE_XII_ID\""
+osascript -e "tell application \"Terminal\" to do script \"cd $(pwd) && echo '🍏 iPHONE XII AGENT' && flutter run --proflie -d $IPHONE_XII_ID\""
 
 # 4. iPhone 14
 echo "🚀 Launching iPhone 14 Agent..."
-osascript -e "tell application \"Terminal\" to do script \"cd $(pwd) && echo '🍏 iPHONE 14 AGENT' && flutter run -d $IPHONE_14_ID\""
+osascript -e "tell application \"Terminal\" to do script \"cd $(pwd) && echo '🍏 iPHONE 14 AGENT' && flutter run --profile -d $IPHONE_14_ID\""
 
 echo "================================="
 echo "✅ Deployment commands sent to 4 devices!"

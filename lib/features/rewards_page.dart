@@ -145,9 +145,13 @@ class _RewardsPageState extends State<RewardsPage>
                 _buildRedeemOption(
                   context,
                   manager,
-                  AppStrings.t('gift_card_coffee'),
+                  AppStrings.languageCode == 'zh'
+                      ? AppStrings.t('gift_card_delivery')
+                      : AppStrings.t('gift_card_appstore'),
                   10000,
-                  Icons.coffee,
+                  AppStrings.languageCode == 'zh'
+                      ? Icons.delivery_dining
+                      : Icons.apps,
                   Colors.white,
                   cardColor,
                 ),
@@ -211,22 +215,6 @@ class _RewardsPageState extends State<RewardsPage>
                 ],
               ),
               const SizedBox(height: 8),
-              Builder(
-                builder: (context) {
-                  final isChinese = AppStrings.languageCode == 'zh';
-                  final rate = isChinese ? 0.0035 : 0.0005;
-                  final currency = isChinese ? '¥' : '\$';
-                  final currencyName = isChinese
-                      ? AppStrings.t('currency_rmb')
-                      : AppStrings.t('currency_usd');
-                  return Text(
-                      "≈ $currency${(balance * rate).toStringAsFixed(4)} $currencyName",
-                      style: TextStyle(
-                          color: accent,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500));
-                },
-              ),
             ],
           ),
           Material(
@@ -436,7 +424,7 @@ class _RewardsPageState extends State<RewardsPage>
                         fontWeight: FontWeight.bold,
                         fontSize: 15)),
                 SizedBox(height: 4),
-                Text("$cost SP",
+                Text("$cost ${AppStrings.t('points_unit')}",
                     style:
                         TextStyle(color: Colors.blueGrey[300], fontSize: 12)),
               ],

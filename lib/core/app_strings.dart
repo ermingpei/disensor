@@ -62,6 +62,7 @@ class AppStrings {
       'version': 'Version',
       'powered_by': 'Support',
       'privacy_policy': 'Privacy Policy',
+      'delete_my_data': 'Delete My Data',
       'replay_tutorial': 'Show Onboarding',
       'sensor_accelerometer': 'Accelerometer',
       'sensor_gyroscope': 'Gyroscope',
@@ -141,7 +142,7 @@ class AppStrings {
 • Standard redemption access
 
 🚀 **PRIME Tier** (Coming Soon)
-• +20% sensing speed bonus
+• +20% points speed bonus
 • Priority redemption queue
 • Exclusive event access
 
@@ -155,7 +156,7 @@ Save 1000+ Sense Points for 30 days to unlock PRIME status automatically.''',
       'lucky_draw_title': 'LUCKY DRAW',
       'lucky_draw_desc':
           'Use 10 Sense Points for a chance to win a gift card immediately.',
-      'try_luck_btn': 'TRY LUCK (-10 SP)',
+      'try_luck_btn': 'TRY LUCK (-10 Points)',
       'spinning': 'SPINNING...',
       'instant_redemption': 'INSTANT REDEMPTION',
       'become_prime': 'BECOME A DISENSOR PRIME PARTNER',
@@ -187,7 +188,8 @@ Save 1000+ Sense Points for 30 days to unlock PRIME status automatically.''',
       'redeem_btn': 'REDEEM',
       'ok': 'OK',
       'gift_card_amazon': 'Amazon Gift Card (Basic)',
-      'gift_card_coffee': 'Coffee Card (Standard)',
+      'gift_card_appstore': 'App Store / Google Play',
+      'points_unit': 'Points',
       // --- New V1.1.0 Keys ---
       'app_name': 'DiSensor™',
       'company_name': 'Qubit Rhythm™',
@@ -229,8 +231,8 @@ Save 1000+ Sense Points for 30 days to unlock PRIME status automatically.''',
       'continue_with_wechat': 'Continue with WeChat',
       'wechat_coming_soon': 'WeChat login coming soon!',
       'anonymous_warning':
-          '⚠️ Anonymous mode: Your earnings are stored locally only and may be lost if you uninstall the app.',
-      'continue_anonymous': 'Continue as Guest (Not Recommended)',
+          '⚠️ Non-registered mode: Your points are stored locally only and will be cleared when you log out or uninstall the app.',
+      'continue_anonymous': 'Non-registered Login (Points cleared on exit)',
       'logout': 'Logout',
       'login_to_sync': 'Login to sync earnings',
       // Phone Login
@@ -288,6 +290,7 @@ Save 1000+ Sense Points for 30 days to unlock PRIME status automatically.''',
       'version': '版本',
       'powered_by': '技术支持：量子律动',
       'privacy_policy': '隐私政策',
+      'delete_my_data': '删除我的数据',
       'replay_tutorial': '重现引导页面',
       'sensor_accelerometer': '加速度计',
       'sensor_gyroscope': '陀螺仪',
@@ -320,15 +323,15 @@ Save 1000+ Sense Points for 30 days to unlock PRIME status automatically.''',
       'signal_poor': '较差',
       'about_qbit': '关于感测积分',
       'about_qbit_content':
-          '感测积分是点索网络(DiSensor Network)的奖励系统。\n\n您通过贡献宝贵的环境感知数据（如气压、噪音、信号密度等）来获得感测积分。这些数据是构建全球精细化环境图谱的核心。您的感测积分代表了您对网络的贡献。\n\n如何获取：基础贡献 + 实时探索加成。',
+          '感测积分是点索网络(DiSensor Network)的奖励系统。\n\n您通过贡献身边的环境感知数据（如气压、噪音、信号密度等）来获得感测积分。这些数据是构建全球精细化环境图谱的核心。您的感测积分代表了您对网络的贡献。\n\n如何获取：基础贡献 + 实时探索加成。',
       'got_it': '知道了',
       'onboard_1_title': '个体化精细感知',
       'onboard_1_body': '加入新型全球分布式数据感知网络。让您的手机变身一台随时随地的科学探测仪器，充分利用空闲资源。',
       'onboard_2_title': '每人参与科研贡献',
       'onboard_2_body':
           '随时随地探测本地气压、噪音、网络等信号，用超精细本地数据帮助科学家预测天气、研究城市热岛效应或优化公共交通。',
-      'onboard_3_title': '获取积分奖励',
-      'onboard_3_body': '将您的数据充分转化为价值。每一份数据都在为您赚取感测积分，可兑换礼品。',
+      'onboard_3_title': '轻松获取积分奖励',
+      'onboard_3_body': '将您的数据充分转化为价值。每一份数据都在为您赚取积分，可即时兑换礼品，也可选择留存赢取未来非凡收益。',
       'enter_network': '进入网络',
       'next': '下一步',
       'slogan': '测量世界的脉动',
@@ -360,11 +363,11 @@ Save 1000+ Sense Points for 30 days to unlock PRIME status automatically.''',
       'tier_free': '等级: 免费',
       'tier_info_title': '会员等级说明',
       'tier_info_desc': '''💎 **免费用户** (当前等级)
-• 基础挖矿速率
+• 基础感测速率
 • 标准兑换权限
 
 🚀 **先驱合伙人** (即将开放)
-• +20% 感测加速
+• +20% 积分加速
 • 优先兑换通道
 • 专属活动参与权
 
@@ -376,8 +379,8 @@ Save 1000+ Sense Points for 30 days to unlock PRIME status automatically.''',
       'claimed': '已抢光',
       'reset_in': '重置倒计时',
       'lucky_draw_title': '幸运抽奖',
-      'lucky_draw_desc': '消耂10个感测积分试手气，有机会立赢礼品卡。',
-      'try_luck_btn': '试手气 (-10 积分)',
+      'lucky_draw_desc': '消费10个感测积分试手气，有机会立赢礼品卡。',
+      'try_luck_btn': '试手气 (-10积分)',
       'spinning': '抽奖中...',
       'instant_redemption': '即时兑换',
       'become_prime': '成为先驱合伙人 (Pioneer)',
@@ -404,7 +407,8 @@ Save 1000+ Sense Points for 30 days to unlock PRIME status automatically.''',
       'redeem_btn': '兑换',
       'ok': '好的',
       'gift_card_amazon': '亚马逊礼品卡 (基础)',
-      'gift_card_coffee': '咖啡卡 (标准)',
+      'gift_card_delivery': '美团/饿了么外卖券',
+      'points_unit': '积分',
       // --- New V1.1.0 Keys ---
       'app_name': '点索(DiSensor)™',
       'company_name': '量子律动(Qubit Rhythm)™',
@@ -444,8 +448,8 @@ Save 1000+ Sense Points for 30 days to unlock PRIME status automatically.''',
       'continue_with_apple': '使用 Apple 登录',
       'continue_with_wechat': '使用微信登录',
       'wechat_coming_soon': '微信登录即将上线！',
-      'anonymous_warning': '⚠️ 匿名模式下，您的收益仅保存在本地设备。卸载App将导致数据丢失。',
-      'continue_anonymous': '以访客身份继续（不推荐）',
+      'anonymous_warning': '⚠️ 非注册用户模式下，您的积分仅保存在本地设备。退出登录或卸载App将导致积分清零。',
+      'continue_anonymous': '非注册用户登录（退出时积分会清零）',
       'logout': '退出登录',
       'login_to_sync': '登录以同步收益',
       // Phone Login

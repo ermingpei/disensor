@@ -48,6 +48,8 @@ flutter:
     - assets/icon/icon.png
     - assets/icon/qbit_coin.png
     - assets/icon/disensor_title.png
+    - assets/icon/google_logo.png
+    - assets/icon/alipay_logo.png
 
 flutter_launcher_icons:
   android: "launcher_icon"

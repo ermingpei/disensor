@@ -1,4 +1,6 @@
 import 'dart:io';
+import 'dart:convert';
+import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart';
 import 'package:wifi_scan/wifi_scan.dart';
 import 'package:network_info_plus/network_info_plus.dart';
@@ -49,15 +51,16 @@ class WifiScannerService {
 
       debugPrint("📡 Found ${results.length} WiFi networks");
 
-      // 2. Map to simplified JSON structure
+      // 2. Map to privacy-preserving structure
+      // - BSSID: Keep OUI (vendor prefix) + hash rest for uniqueness without tracking
+      // - SSID: Not uploaded (can identify home/work networks)
+      // - Keep RSSI and frequency for signal analysis
       return results.map((accessPoint) {
         return {
-          'bssid': accessPoint.bssid,
-          'ssid': accessPoint.ssid,
+          'bssid_hash': _anonymizeBssid(accessPoint.bssid),
           'rssi': accessPoint.level, // Signal strength in dBm
           'frequency': accessPoint.frequency, // Channel frequency in MHz
-          'capabilities': accessPoint.capabilities,
-          'timestamp': DateTime.now().toIso8601String(), // Timestamp of fetch
+          'timestamp': DateTime.now().toIso8601String(),
         };
       }).toList();
     } catch (e) {
@@ -66,12 +69,29 @@ class WifiScannerService {
     }
   }
 
-  /// iOS Fallback: Get current WiFi info
+  /// Anonymize BSSID: Keep OUI (vendor bytes) + hash rest
+  /// This allows vendor analysis without tracking specific devices
+  String _anonymizeBssid(String bssid) {
+    final parts = bssid.toUpperCase().split(':');
+    if (parts.length != 6)
+      return sha256.convert(utf8.encode(bssid)).toString().substring(0, 12);
+
+    // OUI = first 3 bytes (manufacturer identifier, public info)
+    final oui = '${parts[0]}:${parts[1]}:${parts[2]}';
+    // Hash the NIC (device-specific part) for privacy
+    final nicHash = sha256
+        .convert(utf8.encode('${parts[3]}:${parts[4]}:${parts[5]}'))
+        .toString()
+        .substring(0, 6);
+
+    return '$oui:$nicHash';
+  }
+
+  /// iOS Fallback: Get current WiFi info (privacy-preserving)
   Future<List<Map<String, dynamic>>> _getIosCurrentWifi() async {
     try {
       final info = NetworkInfo();
       String? bssid = await info.getWifiBSSID();
-      String? ssid = await info.getWifiName();
 
       if (bssid == null) {
         debugPrint(
@@ -79,15 +99,13 @@ class WifiScannerService {
         return [];
       }
 
-      debugPrint("📡 iOS: Found current WiFi: $ssid ($bssid)");
+      debugPrint("📡 iOS: Found current WiFi connection");
 
       return [
         {
-          'bssid': bssid,
-          'ssid': ssid,
+          'bssid_hash': _anonymizeBssid(bssid),
           'rssi': 0, // Not available on iOS
           'frequency': 0, // Not available on iOS
-          'capabilities': 'ios_current_connection',
           'timestamp': DateTime.now().toIso8601String(),
         }
       ];

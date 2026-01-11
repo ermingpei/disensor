@@ -22,14 +22,20 @@ class _AuthPageState extends State<AuthPage> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _phoneController = TextEditingController();
+  final _otpController = TextEditingController();
 
   bool _passwordVisible = false;
   bool _showForgotPassword = false;
+  bool _isEmailMode = true; // true = email, false = phone
+  bool _otpSent = false;
 
   @override
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
+    _phoneController.dispose();
+    _otpController.dispose();
     super.dispose();
   }
 
@@ -62,8 +68,15 @@ class _AuthPageState extends State<AuthPage> {
                   if (_showForgotPassword)
                     _buildForgotPasswordForm(authService)
                   else ...[
-                    // Email Login Form
-                    _buildEmailForm(authService),
+                    // Login Mode Toggle (Email / Phone)
+                    _buildLoginModeToggle(),
+                    const SizedBox(height: 20),
+
+                    // Email or Phone Login Form
+                    if (_isEmailMode)
+                      _buildEmailForm(authService)
+                    else
+                      _buildPhoneForm(authService),
 
                     const SizedBox(height: 24),
                     _buildDivider(),
@@ -219,6 +232,175 @@ class _AuthPageState extends State<AuthPage> {
             icon: const Icon(Icons.close, color: Colors.redAccent, size: 18),
             onPressed: () {
               Provider.of<AuthService>(context, listen: false).clearError();
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Login mode toggle (Email / Phone)
+  Widget _buildLoginModeToggle() {
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFF1E293B),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      padding: const EdgeInsets.all(4),
+      child: Row(
+        children: [
+          Expanded(
+            child: GestureDetector(
+              onTap: () => setState(() {
+                _isEmailMode = true;
+                _otpSent = false;
+              }),
+              child: Container(
+                padding: const EdgeInsets.symmetric(vertical: 10),
+                decoration: BoxDecoration(
+                  color: _isEmailMode ? Colors.cyanAccent : Colors.transparent,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  AppStrings.t('email_login'),
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: _isEmailMode ? Colors.black : Colors.white54,
+                    fontWeight:
+                        _isEmailMode ? FontWeight.bold : FontWeight.normal,
+                    fontSize: 13,
+                  ),
+                ),
+              ),
+            ),
+          ),
+          Expanded(
+            child: GestureDetector(
+              onTap: () => _showComingSoon(AppStrings.t('phone_login')),
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(vertical: 10),
+                    decoration: BoxDecoration(
+                      color: Colors.transparent,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      AppStrings.t('phone_login'),
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        color: Colors.white38,
+                        fontWeight: FontWeight.normal,
+                        fontSize: 13,
+                      ),
+                    ),
+                  ),
+                  Positioned(
+                    right: 8,
+                    top: 0,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 4, vertical: 1),
+                      decoration: BoxDecoration(
+                        color: Colors.orange,
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        AppStrings.languageCode == 'zh' ? '即将' : 'Soon',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 8,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Phone OTP login form (placeholder for future use)
+  Widget _buildPhoneForm(AuthService authService) {
+    return Form(
+      key: _formKey,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          TextFormField(
+            controller: _phoneController,
+            keyboardType: TextInputType.phone,
+            style: const TextStyle(color: Colors.white),
+            decoration: _inputDecoration(
+              label: AppStrings.t('phone_number'),
+              icon: Icons.phone_outlined,
+              hint: '+1 234 567 8900',
+            ),
+            validator: (value) {
+              if (value == null || value.isEmpty) {
+                return AppStrings.languageCode == 'zh'
+                    ? '请输入手机号'
+                    : 'Phone required';
+              }
+              return null;
+            },
+          ),
+          const SizedBox(height: 14),
+          if (_otpSent) ...[
+            TextFormField(
+              controller: _otpController,
+              keyboardType: TextInputType.number,
+              style: const TextStyle(color: Colors.white),
+              decoration: _inputDecoration(
+                label: AppStrings.t('verification_code'),
+                icon: Icons.pin_outlined,
+              ),
+              validator: (value) {
+                if (value == null || value.length < 4) {
+                  return AppStrings.languageCode == 'zh'
+                      ? '请输入验证码'
+                      : 'OTP required';
+                }
+                return null;
+              },
+            ),
+            const SizedBox(height: 14),
+          ],
+          _buildSubmitButton(
+            authService: authService,
+            label: _otpSent
+                ? AppStrings.t('verify_and_login')
+                : AppStrings.t('send_code'),
+            onPressed: () async {
+              if (_formKey.currentState!.validate()) {
+                if (!_otpSent) {
+                  final success = await authService.sendPhoneOtp(
+                    _phoneController.text.trim(),
+                  );
+                  if (success && mounted) {
+                    setState(() => _otpSent = true);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(AppStrings.t('code_sent')),
+                        backgroundColor: Colors.green,
+                      ),
+                    );
+                  }
+                } else {
+                  final success = await authService.verifyPhoneOtp(
+                    phone: _phoneController.text.trim(),
+                    otp: _otpController.text.trim(),
+                  );
+                  if (success && mounted) {
+                    widget.onAuthSuccess();
+                  }
+                }
+              }
             },
           ),
         ],
@@ -422,12 +604,11 @@ class _AuthPageState extends State<AuthPage> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       children: [
-        // Google (Enabled)
-        _buildOAuthIconButton(
-          icon: Icons.g_mobiledata,
+        // Google (Enabled) - Official Logo
+        _buildOAuthImageButton(
+          imagePath: 'assets/icon/google_logo.png',
           label: 'Google',
-          color: Colors.white,
-          bgColor: const Color(0xFF4285F4),
+          bgColor: Colors.white,
           enabled: true,
           onPressed: () async {
             final success = await authService.signInWithGoogle();
@@ -458,15 +639,87 @@ class _AuthPageState extends State<AuthPage> {
               AppStrings.languageCode == 'zh' ? '微信' : 'WeChat'),
         ),
 
-        // Alipay (Coming Soon)
-        _buildOAuthIconButton(
-          icon: Icons.account_balance_wallet,
+        // Alipay (Coming Soon) - Official Logo
+        _buildOAuthImageButton(
+          imagePath: 'assets/icon/alipay_logo.png',
           label: AppStrings.languageCode == 'zh' ? '支付宝' : 'Alipay',
-          color: Colors.white,
           bgColor: const Color(0xFF1677FF),
           enabled: false,
           onPressed: () => _showComingSoon(
               AppStrings.languageCode == 'zh' ? '支付宝' : 'Alipay'),
+        ),
+      ],
+    );
+  }
+
+  /// OAuth button with image asset
+  Widget _buildOAuthImageButton({
+    required String imagePath,
+    required String label,
+    required Color bgColor,
+    required bool enabled,
+    required VoidCallback onPressed,
+  }) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Stack(
+          children: [
+            InkWell(
+              onTap: onPressed,
+              borderRadius: BorderRadius.circular(16),
+              child: Container(
+                width: 56,
+                height: 56,
+                decoration: BoxDecoration(
+                  color: enabled ? bgColor : bgColor.withValues(alpha: 0.4),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: enabled ? Colors.white24 : Colors.white12,
+                  ),
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: Image.asset(
+                    imagePath,
+                    width: 40,
+                    height: 40,
+                    errorBuilder: (_, __, ___) =>
+                        Icon(Icons.login, color: Colors.grey, size: 28),
+                  ),
+                ),
+              ),
+            ),
+            if (!enabled)
+              Positioned(
+                right: 0,
+                top: 0,
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                  decoration: BoxDecoration(
+                    color: Colors.orange,
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Text(
+                    AppStrings.languageCode == 'zh' ? '即将' : 'Soon',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 8,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ),
+        const SizedBox(height: 6),
+        Text(
+          label,
+          style: TextStyle(
+            color: enabled ? Colors.white70 : Colors.white38,
+            fontSize: 11,
+          ),
         ),
       ],
     );
@@ -553,6 +806,20 @@ class _AuthPageState extends State<AuthPage> {
   Widget _buildAnonymousOption(AuthService authService) {
     return Column(
       children: [
+        // Button first, then warning
+        TextButton(
+          onPressed: () async {
+            await authService.continueAsAnonymous();
+            if (mounted) {
+              widget.onAuthSuccess();
+            }
+          },
+          child: Text(
+            AppStrings.t('continue_anonymous'),
+            style: const TextStyle(color: Colors.white54, fontSize: 13),
+          ),
+        ),
+        const SizedBox(height: 12),
         Container(
           padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
@@ -571,19 +838,6 @@ class _AuthPageState extends State<AuthPage> {
                 ),
               ),
             ],
-          ),
-        ),
-        const SizedBox(height: 12),
-        TextButton(
-          onPressed: () async {
-            await authService.continueAsAnonymous();
-            if (mounted) {
-              widget.onAuthSuccess();
-            }
-          },
-          child: Text(
-            AppStrings.t('continue_anonymous'),
-            style: const TextStyle(color: Colors.white54, fontSize: 13),
           ),
         ),
       ],
